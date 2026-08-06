@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "../UserContext";
 import axios from "axios";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import nitc from "../assets/NIT-calicut-1024x576.webp";
+
 import { 
   FaBuilding, FaCalendarAlt, FaMapMarkerAlt, FaUserTie, 
   FaFileAlt, FaArrowLeft, FaTimesCircle, FaPaperPlane, 

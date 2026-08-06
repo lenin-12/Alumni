@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useUser } from "../UserContext";
-import nitc from "../assets/NIT-calicut-1024x576.webp";
+
 import { 
   FaCalendarAlt, FaTags, FaUserTie, FaCalendar, FaMapMarkerAlt, 
   FaEnvelope, FaFileAlt, FaHandshake, FaTrash, FaPlus, 

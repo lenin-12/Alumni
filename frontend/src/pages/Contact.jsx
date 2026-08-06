@@ -29,7 +29,7 @@ function Contact() {
     setLoading(true);
     
     try {
-      // Send the contact form data to the backend
+     
       await axios.post(`${import.meta.env.VITE_API_URL}/api/contact/submit`, formData,{withCredentials:true});
       
       toast.success("Thank you for your message! We'll get back to you soon.");
@@ -66,7 +66,7 @@ function Contact() {
               <div className="space-y-2 text-gray-600">
                 <p className="flex items-center justify-center">
                   <FaEnvelope className="mr-2 text-[#6B1F1F]" />
-                  <a href="mailto:deanor@adm.nitc.ac.in" className="hover:text-[#7A2323] transition hover:underline">dean_academic@nitkkr.ac.in</a>
+                  <a href="mailto:dean_academic@nitkkr.ac.in" className="hover:text-[#7A2323] transition hover:underline">dean_academic@nitkkr.ac.in</a>
                 </p>
                 <p className="flex items-center justify-center">
                   <FaPhone className="mr-2 text-[#6B1F1F]" />
@@ -87,7 +87,7 @@ function Contact() {
               <div className="space-y-2 text-gray-600">
                 <p className="flex items-center justify-center">
                   <FaEnvelope className="mr-2 text-[#6B1F1F]" />
-                  <a href="mailto:adeanaa@adm.nitc.ac.in" className="hover:text-[#7A2323] transition hover:underline">paratibha@nitkkr.ac.in</a>
+                  <a href="mailto:paratibha@nitkkr.ac.in" className="hover:text-[#7A2323] transition hover:underline">paratibha@nitkkr.ac.in</a>
                 </p>
                 <p className="flex items-center justify-center">
                   <FaPhone className="mr-2 text-[#6B1F1F]" />
@@ -108,7 +108,7 @@ function Contact() {
               <div className="space-y-2 text-gray-600">
                 <p className="flex items-center justify-center">
                   <FaEnvelope className="mr-2 text-[#6B1F1F]" />
-                  <a href="mailto:archana.biswas@nitc.ac.in" className="hover:text-[#7A2323] transition hover:underline">dixitgarg1@nitkkr.ac.in</a>
+                  <a href="mailto:dixitgarg1@nitkkr.ac.in" className="hover:text-[#7A2323] transition hover:underline">dixitgarg1@nitkkr.ac.in</a>
                 </p>
                 <p className="flex items-center justify-center">
                   <FaPhone className="mr-2 text-[#6B1F1F]" />

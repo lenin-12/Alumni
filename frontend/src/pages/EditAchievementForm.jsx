@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUser } from "../UserContext";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import nitc from "../assets/NIT-calicut-1024x576.webp";
 import axios from "axios";
 import { 
   FaTrophy, FaCalendarAlt, FaTag, FaFileAlt, FaBuilding, 
