@@ -157,8 +157,8 @@ function Register() {
       } else if (typeof image === 'string') {
         formData.append("imageUrl", image);
       }
-
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/register`, formData, {
+`${import.meta.env.VITE_API_URL}/api/auth/register`
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true
       });
