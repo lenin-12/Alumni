@@ -19,7 +19,10 @@ const AchievementsList = () => {
       try {
         const response = await axiosInstance.get("/api/achievements/all");
         const achievementsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
-        setAchievements(achievementsArray);
+        const validAchievements = achievementsArray.filter(
+          ach => ach && ach.userId && typeof ach.userId === "object" && ach.userId.name
+        );
+        setAchievements(validAchievements);
       } catch (error) {
         console.error("Error fetching achievements:", error);
         setError("Failed to fetch achievements.");
@@ -222,7 +225,11 @@ const confirmDelete = (id) => {
                       </div>
                       <div className="flex items-center text-gray-600">
                         <FaUser className="mr-2 text-[#8B1E1E] flex-shrink-0" />
-                        <span className="font-semibold">{achievement.userId ? `${achievement.userId.name} ${achievement.userId.lastName || ""}` : "Deleted User"}</span>
+                        <span className="font-semibold">
+                          {achievement.userId && typeof achievement.userId === "object"
+                            ? `${achievement.userId.name} ${achievement.userId.lastName || ""}`
+                            : "Deleted User"}
+                        </span>
                       </div>
                     </div>
                   </div>

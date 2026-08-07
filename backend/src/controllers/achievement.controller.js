@@ -8,7 +8,11 @@ const getAchievements = async (req, res) => {
         const achievements = await Achievement.find()
             .populate('userId', 'name lastName email imageUrl department')
             .sort({ dateOfAchievement: -1 });
-        res.json(achievements);
+        
+        // Filter out achievements where the populated userId is null/deleted or invalid
+        const validAchievements = achievements.filter(ach => ach.userId && typeof ach.userId === 'object' && ach.userId.name);
+        
+        res.json(validAchievements);
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
