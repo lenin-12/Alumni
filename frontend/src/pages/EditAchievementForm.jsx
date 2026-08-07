@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser } from "../UserContext";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { 
   FaTrophy, FaCalendarAlt, FaTag, FaFileAlt, FaBuilding, 
   FaPaperPlane, FaTimesCircle, FaArrowLeft, FaEdit,
@@ -46,7 +46,7 @@ const EditAchievementForm = () => {
     useEffect(() => {
         const fetchAchievement = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/achievements/${id}`);
+                const response = await axiosInstance.get(`/api/achievements/${id}`);
                 const data = response.data;
 
                 // Convert [YYYY, MM, DD] to "YYYY-MM-DD"
@@ -145,9 +145,8 @@ const EditAchievementForm = () => {
                 data.append("image", selectedFile);
             }
 
-            await axios.put(`${import.meta.env.VITE_API_URL}/api/achievements/${id}`, data, {
-                headers: { "Content-Type": "multipart/form-data" },
-                withCredentials: true,
+            await axiosInstance.put(`/api/achievements/${id}`, data, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
             toast.success("Achievement Updated Successfully!");
             navigate(`/profile/${user.id}`);
@@ -162,9 +161,7 @@ const EditAchievementForm = () => {
     const handleDelete = async () => {
         setIsDeleting(true);
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/api/achievements/${id}`, { 
-                withCredentials: true 
-            });
+            await axiosInstance.delete(`/api/achievements/${id}`);
             toast.success("Achievement deleted successfully");
             navigate(`/profile/${user.id}`);
         } catch (error) {

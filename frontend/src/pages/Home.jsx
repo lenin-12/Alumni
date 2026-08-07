@@ -47,9 +47,13 @@ function Home() {
   };
 
   const formatDate = (dateString) => {
-    const [year, month, day] = dateString.split("-");
+    if (!dateString) return { day: "", monthAbbr: "" };
+    const datePart = dateString.split("T")[0];
+    const parts = datePart.split("-");
+    if (parts.length < 3) return { day: "", monthAbbr: "" };
+    const [year, month, day] = parts;
     const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const monthAbbr = monthNames[parseInt(month, 10) - 1];
+    const monthAbbr = monthNames[parseInt(month, 10) - 1] || "";
     return { day, monthAbbr };
   };
 

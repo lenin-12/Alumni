@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../UserContext";
 
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { 
@@ -95,12 +95,11 @@ const AchievementsForm = () => {
         data.append("image", selectedFile);
       }
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/achievements`,
+      await axiosInstance.post(
+        "/api/achievements",
         data,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true
+          headers: { "Content-Type": "multipart/form-data" }
         }
       );
       

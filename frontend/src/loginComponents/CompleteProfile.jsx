@@ -30,6 +30,8 @@ function CompleteProfile() {
 
   const departmentOptions = [
     "Computer Science and Engineering",
+    "Information Technology",
+    "Artificial Intelligence & Machine Learning",
     "Electronics and Communication Engineering",
     "Electrical and Electronics Engineering", 
     "Mechanical Engineering",

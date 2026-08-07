@@ -5,11 +5,8 @@ const cloudinaryUpload = require('../utils/cloudinaryUpload');
 // Get all users/alumni
 const getUsers = async (req, res) => {
     try {
-        // Exclude admins from the main directory and filter by logged-in user role
-        let query = { role: { $ne: 'ADMIN' } };
-        if (req.user && req.user.role === 'ALUMNI') {
-            query = { role: 'ALUMNI' };
-        }
+        // Only fetch users with role 'ALUMNI'
+        let query = { role: 'ALUMNI' };
         
         // Exclude the logged-in user themselves
         if (req.user) {
@@ -144,11 +141,8 @@ const searchUsers = async (req, res) => {
             };
         }
         
-        // Exclude ADMIN users and filter based on user role
-        let roleCriteria = { role: { $ne: 'ADMIN' } };
-        if (req.user && req.user.role === 'ALUMNI') {
-            roleCriteria = { role: 'ALUMNI' };
-        }
+        // Only allow searching for ALUMNI users
+        let roleCriteria = { role: 'ALUMNI' };
         
         // Exclude the logged-in user themselves
         let idCriteria = {};

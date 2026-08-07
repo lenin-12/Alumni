@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { FaTrash, FaTrophy, FaCalendarAlt, FaBuilding, FaUser, FaPlus } from "react-icons/fa";
 import { useUser } from "../UserContext";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +17,7 @@ const AchievementsList = () => {
   useEffect(() => {
     const fetchAchievements = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/achievements/all`, { withCredentials: true });
+        const response = await axiosInstance.get("/api/achievements/all");
         const achievementsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
         setAchievements(achievementsArray);
       } catch (error) {
@@ -62,7 +62,7 @@ const AchievementsList = () => {
 };
 
 const confirmDelete = (id) => {
-    axios.delete(`${import.meta.env.VITE_API_URL}/api/achievements/${id}`, { withCredentials: true })
+    axiosInstance.delete(`/api/achievements/${id}`)
         .then(() => {
             setAchievements(achievements.filter(achievement => achievement.id !== id));
             toast.success("Achievement deleted successfully");
@@ -222,7 +222,7 @@ const confirmDelete = (id) => {
                       </div>
                       <div className="flex items-center text-gray-600">
                         <FaUser className="mr-2 text-[#8B1E1E] flex-shrink-0" />
-                        <span className="font-semibold">{achievement.alumniName}</span>
+                        <span className="font-semibold">{achievement.userId ? `${achievement.userId.name} ${achievement.userId.lastName || ""}` : "Deleted User"}</span>
                       </div>
                     </div>
                   </div>

@@ -270,7 +270,7 @@ const AlumniList = () => {
               <div>
                 <p className="text-sm text-gray-200">Total Registered</p>
                 <p className="text-2xl font-bold">
-                  {alumni.length} {user && user.role === "ALUMNI" ? "Alumni" : "Members"}
+                  {alumni.length} Alumni
                 </p>
               </div>
             </div>
@@ -347,7 +347,7 @@ const AlumniList = () => {
           
           {/* Results Count */}
           <div className="mt-4 text-gray-500 text-xs font-medium">
-            Showing {filteredAlumni.length} of {alumni.length} {user && user.role === "ALUMNI" ? "alumni" : "members"}
+            Showing {filteredAlumni.length} of {alumni.length} alumni
           </div>
         </div>
         

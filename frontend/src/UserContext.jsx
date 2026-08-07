@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
+import { setAccessToken } from "./utils/axiosInstance";
 
 const UserContext = createContext();
 
@@ -21,7 +22,11 @@ export function UserProvider({ children }) {
   });
 
   const [token, setToken] = useState(() => {
-    return localStorage.getItem("token") || null;
+    const storedToken = localStorage.getItem("token") || null;
+    if (storedToken) {
+      setAccessToken(storedToken);
+    }
+    return storedToken;
   });
 
   // Set default authorization header if token exists
@@ -50,6 +55,7 @@ export function UserProvider({ children }) {
     if (userToken) {
       setToken(userToken);
       localStorage.setItem("token", userToken);
+      setAccessToken(userToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
     }
   };
@@ -59,6 +65,7 @@ export function UserProvider({ children }) {
     setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    setAccessToken(null);
     delete axios.defaults.headers.common['Authorization'];
   };
 

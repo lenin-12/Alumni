@@ -11,10 +11,10 @@ const {
   demoteFromAdmin,
   getUserPoints
 } = require('../controllers/user.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
+const { protect, authorize, optionalProtect } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload');
 
-router.get('/', getUsers);
+router.get('/', optionalProtect, getUsers);
 
 router.get('/leaderboard', protect, getLeaderboard);
 router.get('/search', protect, searchUsers);
