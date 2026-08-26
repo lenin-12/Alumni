@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { FaUserCheck, FaUserTimes, FaUserClock, FaUserPlus } from "react-icons/fa";
 import { toast } from 'react-toastify';
 import { useUser } from "../UserContext";
-
+import axiosInstance from "../utils/axiosInstance";
+const axios = axiosInstance;   
 const Connections = () => {
     const [pending, setPending] = useState([]);
     const [accepted, setAccepted] = useState([]);
@@ -11,7 +11,12 @@ const Connections = () => {
     const { user } = useUser();
 
     useEffect(() => {
-        if (!user?.id) return;
+        if(!user?.id){
+            setLoading(false); 
+            navigate("/login")
+            return;
+        }
+         
         fetchConnections();
     }, [user]);
 
@@ -33,7 +38,7 @@ const Connections = () => {
 
     const acceptRequest = async (requestId) => {
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/connections/accept/${requestId}`,{ withCredentials: true });
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/connections/accept/${requestId}`,{},{ withCredentials: true });
             const updatedRequest = pending.find(req => req.id === requestId);
             setPending(prev => prev.filter(req => req.id !== requestId));
             setAccepted(prev => [...prev, { ...updatedRequest, status: 'ACCEPTED' }]);

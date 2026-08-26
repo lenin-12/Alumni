@@ -34,6 +34,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import Connection from "../../backend/src/models/Connection";
 
 function App() {
   return (
@@ -45,7 +46,13 @@ function App() {
         <Route path="/google-register" element={<GoogleRegister />} />
        
         <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/connections" element={<Connections />} />
+        <Route path="/connections"
+         element={
+          <ProtectedRoute allowedRoles={["ADMIN","STUDENT","ALUMNI"]}>
+          <Connections/>
+        </ProtectedRoute>
+        }
+       />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/complete-profile" element={<CompleteProfile/>}/>
@@ -66,7 +73,14 @@ function App() {
         <Route path="/alumni/:alumniId/achievements" element={<AlumniAchievements />} />
         <Route path="/alumni/:alumniId/workexperience" element={<AlumniWorkExp />} />
        
-        <Route path="/alumni" element={<AlumniList />} />
+        <Route path="/alumni" 
+        element={
+            <ProtectedRoute allowedRoles={["ADMIN","STUDENT","ALUMNI"]}>
+              <AlumniList/>
+            </ProtectedRoute>
+          } 
+        />
+            
         <Route path="/work-experience" element={<WorkExperienceList />} />
         <Route path="/gallery" element={<Gallery/>}/>
         <Route path="/events" element={<Events />} />

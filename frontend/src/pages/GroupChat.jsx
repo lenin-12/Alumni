@@ -233,7 +233,7 @@ const GroupChat = () => {
                 setGroups({ joined: joinedGroups, notJoined: notJoinedGroups });
             })
             .catch(error => console.error("Error fetching groups:", error));
-    }, [userId, groupMessages]);
+    }, [userId]);
 
     // Socket.io Connection Management for GroupChat
     useEffect(() => {

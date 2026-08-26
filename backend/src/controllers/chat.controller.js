@@ -3,12 +3,7 @@ const ChatGroup = require('../models/ChatGroup');
 const GroupMessage = require('../models/GroupMessage');
 const User = require('../models/User');
 
-// ==========================================
-// 1. DIRECT MESSAGE CONTROLLER ACTIONS
-// ==========================================
 
-// GET /api/chat/recent/:userId
-// Aggregates and returns unique recent users who have chatted with the user
 const getRecentContacts = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -136,9 +131,6 @@ const searchChatUsers = async (req, res) => {
     }
 };
 
-// ==========================================
-// 2. GROUP CHAT CONTROLLER ACTIONS
-// ==========================================
 
 // GET /api/chat/groups
 // Returns all group chats

@@ -11,17 +11,11 @@ const PORT = process.env.PORT || 5001;
 const MONGO_URI =
     process.env.MONGO_URI || "mongodb://localhost:27017/alumni_network";
 
-
 const server = http.createServer(app);
-
-
 
 const io = initSocket(server);
 
 app.set("io", io);
-
-
-
 
 mongoose
     .connect(MONGO_URI)
@@ -30,7 +24,7 @@ mongoose
 
         server.listen(PORT, () => {
             console.log(
-                `🚀 Server running at http://localhost:${PORT}`
+                `Server running at http://localhost:${PORT}`
             );
         });
     })

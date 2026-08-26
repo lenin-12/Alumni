@@ -2,12 +2,11 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // required so the httpOnly refreshToken cookie is sent/received
+  withCredentials: true, //  httpOnly refreshToken cookie is sent/received
 });
 
-// In-memory only — never localStorage. If the tab is closed, the access token
-// is gone, but the httpOnly refresh cookie survives and silently re-issues one
-// on the next request (see the response interceptor below).
+// In-memory only — never stored in localStorage. If the tab is closed, the access token is gone, but the httpOnly refresh cookie survives and silently re-issues one
+// on the next request
 let accessToken = null;
 
 export const setAccessToken = (token) => {
@@ -17,7 +16,7 @@ export const setAccessToken = (token) => {
 export const getAccessToken = () => accessToken;
 
 axiosInstance.interceptors.request.use((config) => {
-  if (accessToken) {
+  if(accessToken){
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;

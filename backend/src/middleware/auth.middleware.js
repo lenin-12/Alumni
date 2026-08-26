@@ -15,6 +15,7 @@ const protect = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
         const user = await User.findById(decoded.id).select('-password');
+        // ikkada password ni fetch chesey vidhanam change cheyyi next time chusinapudu 
 
         if (!user) {
             // Token is valid but the account behind it no longer exists

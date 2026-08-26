@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { FaTrashAlt, FaUserGraduate, FaUsers, FaSearch, FaFilter, FaBuilding, FaGraduationCap, FaUserClock, FaUserCheck } from "react-icons/fa";
 import { toast } from 'react-toastify';
 import { useUser } from "../UserContext";
+import axiosInstance from "../utils/axiosInstance";
+const axios = axiosInstance;   // rename via alias
 
 const AlumniList = () => {
   const [alumni, setAlumni] = useState([]);
@@ -23,24 +24,23 @@ const AlumniList = () => {
   useEffect(() => {
     fetchAlumni();
     fetchConnections();
-  }, [user.id,alumni.id]);
+  }, []);
 
-  // const fetchConnections = async () => {
-  //   try {
-  //     const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/connections/user/${user.id}`, { withCredentials: true });
-  //     const connectionsMap = {};
-  //     response.data.forEach(conn => {
-  //       if (conn.sender.id === user.id) {
-  //         connectionsMap[conn.receiver.id] = conn.status;
-  //       } else {
-  //         connectionsMap[conn.sender.id] = conn.status;
-  //       }
-  //     });
-  //     setConnections(connectionsMap);
-  //   } catch (error) {
-  //     console.error("Error fetching connections:", error);
-  //   }
-  // };
+
+  const fetchAlumni = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, { withCredentials: true });
+      const alumniData = response.data;
+      setAlumni(alumniData);
+      setFilteredAlumni(alumniData);
+    } catch (error) {
+      console.error("Error fetching alumni:", error);
+      toast.error("Failed to load alumni list");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchConnections = async () => {
     try {
@@ -50,8 +50,7 @@ const AlumniList = () => {
       );
   
       const { pending, accepted } = response.data; // Destructure response
-      //const connectionsMap = {};
-  
+     
       // Process pending connections
       pending.forEach((conn) => {
         if (conn.sender.id === user.id) {
@@ -155,26 +154,12 @@ const AlumniList = () => {
     }
   }, [alumni, searchTerm, filterBatch, filterDepartment]);
 
-  const fetchAlumni = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, { withCredentials: true });
-      const alumniData = response.data;
-      setAlumni(alumniData);
-      setFilteredAlumni(alumniData);
-    } catch (error) {
-      console.error("Error fetching alumni:", error);
-      toast.error("Failed to load alumni list");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const applyFilters = () => {
     let filtered = [...alumni];
     
     // Apply search filter
-    if (searchTerm) {
+    if(searchTerm){
       filtered = filtered.filter(alumnus => 
         alumnus.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         alumnus.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -183,12 +168,12 @@ const AlumniList = () => {
     }
     
     // Apply batch filter
-    if (filterBatch) {
+    if(filterBatch){
       filtered = filtered.filter(alumnus => alumnus.batch === filterBatch);
     }
     
     // Apply department filter
-    if (filterDepartment) {
+    if(filterDepartment){
       filtered = filtered.filter(alumnus => alumnus.department === filterDepartment);
     }
     
