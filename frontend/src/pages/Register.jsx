@@ -120,7 +120,7 @@ function Register() {
     }else{
       // Scroll to the first error
       const firstErrorField = document.querySelector('.border-red-500');
-      if (firstErrorField) {
+      if(firstErrorField){
         firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
@@ -157,7 +157,7 @@ function Register() {
       } else if (typeof image === 'string') {
         formData.append("imageUrl", image);
       }
-`${import.meta.env.VITE_API_URL}/api/auth/register`
+
       await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true

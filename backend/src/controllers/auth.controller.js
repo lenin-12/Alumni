@@ -52,7 +52,7 @@ const registerUser = async (req, res) => {
             imageUrl,
         });
 
-        if (!user) {
+        if(!user){
             return res.status(400).json({ success: false, message: 'Invalid user data' });
         }
 
@@ -83,7 +83,7 @@ const loginUser = async (req, res) => {
         const { email, password } = req.body;
 
         const user = await User.findOne({ email }).select('+refreshToken');
-
+        
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
@@ -195,14 +195,14 @@ const refreshAccessToken = async (req, res) => {
 };
 
 // POST /api/auth/logout — clears the refresh token both from the cookie and the DB
-// so it can't be replayed even if someone captured it before logout.
+
 const logoutUser = async (req, res) => {
     const token = req.cookies?.refreshToken;
 
     try {
-        if (token) {
-            const decoded = jwt.decode(token); // don't need verify here, just the id to clear it
-            if (decoded?.id) {
+        if(token){
+            const decoded = jwt.decode(token); 
+            if(decoded?.id){
                 await User.findByIdAndUpdate(decoded.id, { refreshToken: null });
             }
         }

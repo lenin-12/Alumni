@@ -21,7 +21,7 @@ const createJob = async (req, res) => {
             contactInfo, userId
         } = req.body;
 
-        // Use the authenticated user's ID or the one passed in form data
+       
         const postedById = req.user ? req.user.id : userId;
 
         if (!postedById) {
@@ -50,20 +50,20 @@ const createJob = async (req, res) => {
 
 // Delete job posting
 const deleteJob = async (req, res) => {
-    try {
+    try{
         const job = await JobOpportunity.findById(req.params.id);
-        if (!job) {
+        if(!job){
             return res.status(404).json({ success: false, message: 'Job not found' });
         }
 
-        // Optional: Check if user has permission to delete (is admin or the original poster)
-        if (req.user && req.user.role !== 'ADMIN' && job.postedBy.toString() !== req.user.id) {
+        // Check whether user has the permission to delete 
+        if(req.user && req.user.role !== 'ADMIN' && job.postedBy.toString() !== req.user.id) {
             return res.status(403).json({ success: false, message: 'Not authorized to delete this job' });
         }
 
         await JobOpportunity.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: 'Job deleted successfully' });
-    } catch (error) {
+    }catch(error){
         res.status(500).json({ success: false, message: error.message });
     }
 };

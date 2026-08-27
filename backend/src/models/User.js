@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    lastName: { type: String },
+    lastName: { type: String, requeired:true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true }, // Empty for Google OAuth users
     role: { type: String, enum: ['ALUMNI', 'STUDENT', 'ADMIN'], default: 'ALUMNI' },

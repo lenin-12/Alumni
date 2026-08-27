@@ -4,28 +4,28 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
     let token;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
     }
 
-    if (!token) {
+    if(!token){
         return res.status(401).json({ success: false, message: 'Not authorized, no token' });
     }
 
-    try {
+    try{
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
         const user = await User.findById(decoded.id).select('-password');
         // ikkada password ni fetch chesey vidhanam change cheyyi next time chusinapudu 
 
-        if (!user) {
+        if(!user){
             // Token is valid but the account behind it no longer exists
             return res.status(401).json({ success: false, message: 'User no longer exists' });
         }
 
         req.user = user;
         next();
-    } catch (error) {
-        if (error.name === 'TokenExpiredError') {
+    }catch(error){
+        if(error.name === 'TokenExpiredError'){
             return res.status(401).json({ success: false, message: 'Access token expired', code: 'TOKEN_EXPIRED' });
         }
         return res.status(401).json({ success: false, message: 'Not authorized, token invalid' });
@@ -35,23 +35,23 @@ const protect = async (req, res, next) => {
 const optionalProtect = async (req, res, next) => {
     let token;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
     }
 
-    if (!token) {
+    if(!token){
         return next();
     }
 
-    try {
+    try{
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
         const user = await User.findById(decoded.id).select('-password');
 
-        if (user) {
+        if(user){
             req.user = user;
         }
         next();
-    } catch (error) {
+    }catch(error){
         // Proceed even if token is invalid or expired
         next();
     }
@@ -59,7 +59,7 @@ const optionalProtect = async (req, res, next) => {
 
 const authorize = (...roles) => {
     return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
+        if(!req.user || !roles.includes(req.user.role)){
             return res.status(403).json({ success: false, message: 'User role not authorized' });
         }
         next();

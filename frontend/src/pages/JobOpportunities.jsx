@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+
+import axiosInstance from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 import { 
   FaTrash, FaBuilding, FaMapMarkerAlt, FaBriefcase, FaUserTie, 
@@ -88,7 +88,7 @@ function JobOpportunities() {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs`, { withCredentials: true });
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/jobs`, { withCredentials: true });
       const jobOpportunitiesArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
       setJobs(jobOpportunitiesArray);
       setFilteredJobs(jobOpportunitiesArray);
@@ -138,7 +138,7 @@ function JobOpportunities() {
     
     try {
       formData.userId = user.id;
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs`, formData, { withCredentials: true });
+      await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/jobs`, formData, { withCredentials: true });
       toast.success("Job posted successfully!");
       setFormData({
         title: "",
@@ -195,7 +195,7 @@ function JobOpportunities() {
 
   const performDelete = async (jobId) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}`, { withCredentials: true });
+      await axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}`, { withCredentials: true });
       setJobs(jobs.filter((job) => job.id !== jobId));
       toast.success("Job deleted successfully");
     } catch (error) {

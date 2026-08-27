@@ -4,8 +4,8 @@ const jobOpportunitySchema = new mongoose.Schema({
     title: { type: String, required: true },
     company: { type: String, required: true },
     location: { type: String, required: true },
-    jobType: { type: String }, // e.g. Full-time, Part-time, Internship
-    experienceLevel: { type: String }, // e.g. Entry, Mid, Senior
+    jobType: { type: String }, //example: Full-time, Part-time, Internship
+    experienceLevel: { type: String }, //example: Entry, Mid, Senior
     skills: { type: String },
     description: { type: String, required: true },
     applicationDeadline: { type: Date },

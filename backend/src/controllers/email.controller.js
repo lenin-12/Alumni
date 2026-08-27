@@ -60,7 +60,7 @@ const resetPassword = async (req, res) => {
 // POST /api/email/invite
 // Sends community invites (logged to console for development verification)
 const sendInvite = async (req, res) => {
-    try {
+    try{
         const { toEmails, fromEmail, name } = req.body;
         if (!toEmails || toEmails.length === 0) {
             return res.status(400).json({ success: false, message: 'Recipient email(s) required' });
@@ -72,7 +72,7 @@ const sendInvite = async (req, res) => {
         console.log('====================================');
 
         res.json({ success: true, message: 'Invitations sent successfully!' });
-    } catch (error) {
+    }catch(error){
         res.status(500).json({ success: false, message: error.message });
     }
 };
