@@ -1,10 +1,9 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FaBriefcase, FaAward, FaUserEdit, FaMapMarkerAlt, FaGraduationCap, FaBuilding, FaCalendarAlt, FaPlus, FaLock, FaLockOpen, FaEdit } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "../UserContext";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 
 function Profile() {
@@ -48,7 +47,7 @@ function Profile() {
       const fetchUser = async () => {
         setLoading(true);
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/${id}`, { withCredentials: true });
+          const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users/${id}`, { withCredentials: true });
           setAlumni(response.data);
           setProfileType(response.data.profileType);
         } catch (error) {
@@ -67,7 +66,7 @@ function Profile() {
     if (user && user.firstName) {
       const fetchPoints = async () => {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/${id}/points`, { withCredentials: true });
+          const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users/${id}/points`, { withCredentials: true });
           setPoints(response.data.points);
         } catch (error) {
           console.error("Error fetching points:", error);
@@ -83,7 +82,7 @@ function Profile() {
     if (user && user.firstName) {
       const fetchWorkExp = async () => {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/work-experience/user/${id}`, { withCredentials: true });
+          const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/work-experience/user/${id}`, { withCredentials: true });
           const data = response.data;
           const workExpArray = Array.isArray(data) ? [...data].reverse() : [data];
           setWorkExp(workExpArray);
@@ -101,7 +100,7 @@ function Profile() {
     if (user && user.firstName) {
       const fetchAchievements = async () => {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/achievements/user/${id}`, { withCredentials: true });
+          const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/achievements/user/${id}`, { withCredentials: true });
           const data = response.data;
           const achievementsArray = Array.isArray(data) ? [...data].reverse() : [data];
           setAchievements(achievementsArray);
@@ -117,7 +116,7 @@ function Profile() {
   const handleProfileTypeChange = async (newType) => {
     setProfileType(newType);
     try {
-      await axios.put(
+      await axiosInstance.put(
         `${import.meta.env.VITE_API_URL}/api/users/${id}/updateProfile`,
         { profileType: newType },
         { withCredentials: true }

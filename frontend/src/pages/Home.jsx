@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useUser } from "../UserContext";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import nitkkrImage from "../assets/nitkkr-pic.jpg";
 import achievement from '../assets/achievement.png';
 import job from '../assets/job.png';
@@ -29,7 +29,7 @@ function Home() {
 
   const fetchAlumni = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, { withCredentials: true });
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users`, { withCredentials: true });
       setAlumni(response.data.sort((a, b) => b.id - a.id));
     } catch (error) {
       console.error("Error fetching alumni:", error);
@@ -38,7 +38,7 @@ function Home() {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/events`, { withCredentials: true });
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/events`, { withCredentials: true });
       const eventsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
       setEvents(eventsArray);
     } catch (error) {
@@ -116,7 +116,7 @@ function Home() {
 
     setIsSending(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/email/invite`, {
+      await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/email/invite`, {
         userId: user.id,
         fromEmail: user.email,
         toEmails: emails,

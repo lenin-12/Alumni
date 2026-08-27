@@ -26,10 +26,6 @@ const Dashboard = () => {
         { name: "User Management", icon: <FaUsers /> }
     ];
 
-
-
-
-
     return (
 
         <div className="flex flex-col min-h-screen bg-[#FAF6F0]">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUser } from "../UserContext";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useNavigate, useParams, Link } from "react-router-dom";
 
 import { 
@@ -33,7 +33,7 @@ const EditWorkExperienceForm = () => {
   useEffect(() => {
     const fetchWorkExperience = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/work-experience/${id}`);
+        const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/work-experience/${id}`);
         const data = response.data;
 
         // Convert [YYYY, MM, DD] to "YYYY-MM-DD"
@@ -110,7 +110,7 @@ const EditWorkExperienceForm = () => {
         isPresent: present ? true : false 
       };
       
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/work-experience/${id}`, requestData, {
+      await axiosInstance.put(`${import.meta.env.VITE_API_URL}/api/work-experience/${id}`, requestData, {
         withCredentials: true,
       });
       toast.success("Work Experience Updated Successfully!");

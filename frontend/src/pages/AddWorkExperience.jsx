@@ -1,7 +1,6 @@
-
+import axiosInstance from "../utils/axiosInstance";
 import { useState } from "react";
 import { useUser } from "../UserContext";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
 import {
@@ -77,9 +76,7 @@ const AddWorkExperienceForm = () => {
         isPresent: isPresent ? true : false,
       };
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/work-experience`,
-        requestData,
+      await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/work-experience`,requestData,
         {
           withCredentials: true,
         }

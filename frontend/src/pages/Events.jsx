@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 
 import { 
@@ -117,7 +117,7 @@ function Events() {
     setIsSubmitting(true);
     
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/events`, formData, { withCredentials: true });
+      await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/events`, formData, { withCredentials: true });
       toast.success("Event posted successfully!");
       setFormData({
         eventName: "",
@@ -172,7 +172,7 @@ function Events() {
   
   const deleteEvent = async (eventId) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/events/${eventId}`, { withCredentials: true });
+      await axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/events/${eventId}`, { withCredentials: true });
       setEvents(events.filter((event) => event.id !== eventId));
       toast.success("Event deleted successfully");
     } catch (error) {
@@ -184,7 +184,7 @@ function Events() {
   // Fetch all events
   const fetchEvents = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/events`, { withCredentials: true });
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/events`, { withCredentials: true });
       const eventsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
       setEvents(eventsArray);
       setFilteredEvents(eventsArray);

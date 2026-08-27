@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 import { FaFolderOpen, FaTrash, FaCamera, FaFolder, FaUpload } from "react-icons/fa";
 import { IoArrowBack, IoAdd } from "react-icons/io5";
@@ -39,7 +39,7 @@ const Gallery = () => {
     };
 
     useEffect(() => {
-        axios.get(`${import.meta.env.VITE_API_URL}/api/gallery/folders`)
+        axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/gallery/folders`)
             .then(response => setFolders(response.data))
             .catch(error => {
                 toast.error("Failed to fetch folders");
@@ -49,7 +49,7 @@ const Gallery = () => {
     const openFolder = (folder) => {
         setCurrentFolder(folder.folderName);
         setCurrentFolderId(folder.id);
-        axios.get(`${import.meta.env.VITE_API_URL}/api/gallery/folder/${folder.folderName}`)
+        axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/gallery/folder/${folder.folderName}`)
             .then(response => setImages(response.data))
             .catch(error => {
                 toast.error(`Failed to open folder "${folder.folderName}"`);
@@ -71,7 +71,7 @@ const Gallery = () => {
             formData.append("folderName", finalFolder);
             formData.append("userId", userId);
 
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/gallery/upload`, formData, {
+            await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/gallery/upload`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 withCredentials: true
             });
@@ -123,7 +123,7 @@ const Gallery = () => {
     
     const deleteFolderConfirmed = async (folderId) => {
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/api/gallery/folders/${folderId}`, { withCredentials: true });
+            await axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/gallery/folders/${folderId}`, { withCredentials: true });
             setFolders(folders.filter((folder) => folder.id !== folderId));
             toast.success("Folder deleted successfully");
         } catch (error) {
@@ -164,7 +164,7 @@ const Gallery = () => {
 
     const deleteImageConfirmed = async (folderId, imageUrl) => {
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/api/gallery/${folderId}/images`, {
+            await axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/gallery/${folderId}/images`, {
                 data: { imageUrl },  // Send image URL in request body
                 withCredentials: true
             });

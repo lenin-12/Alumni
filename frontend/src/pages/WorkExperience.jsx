@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { FaBuilding, FaUserTie, FaMapMarkerAlt, FaCalendarAlt, FaTrash, FaUser, FaBriefcase, FaSearch, FaFilter, FaTimes, FaChevronRight } from "react-icons/fa";
 import { useUser } from "../UserContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -51,7 +51,7 @@ const WorkExperienceList = () => {
 
     const fetchWorkExperiences = async () => {
         try {
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/work-experience`, { withCredentials: true });
+            const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/work-experience`, { withCredentials: true });
             let workExpArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
             
             // Fetch user details for each work experience
@@ -107,7 +107,7 @@ const WorkExperienceList = () => {
     };
     
     const confirmDelete = (id) => {
-        axios.delete(`${import.meta.env.VITE_API_URL}/api/work-experience/${id}`, { withCredentials: true })
+        axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/work-experience/${id}`, { withCredentials: true })
             .then(() => {
                 setWorkExperiences(workExperiences.filter(exp => exp.id !== id));
                 toast.success("Work experience deleted successfully");

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import userImg from '../assets/user.webp';
 import { motion } from "framer-motion";
@@ -16,7 +16,7 @@ function Leaderboard() {
 
   useEffect(() => {
     setIsLoading(true);
-    axios.get(`${import.meta.env.VITE_API_URL}/api/users/leaderboard`, { withCredentials: true })
+    axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users/leaderboard`, { withCredentials: true })
       .then(response => {
         setUsers(response.data);
         setFilteredUsers(response.data.filter(user => user.role === "ALUMNI"));

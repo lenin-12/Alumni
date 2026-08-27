@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useUser } from "../UserContext";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 
 import userImage from '../assets/user.webp';
 import '../index.css';
@@ -30,7 +30,7 @@ function Contact() {
     
     try {
      
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/contact/submit`, formData,{withCredentials:true});
+      await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/contact/submit`, formData,{withCredentials:true});
       
       toast.success("Thank you for your message! We'll get back to you soon.");
       setFormData({ name: '', email: '', message: '' });

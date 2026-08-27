@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useUser } from "../UserContext";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -17,7 +17,7 @@ const SearchResults = () => {
     if (user && user.user && user.user.id) {
       const fetchUsers = async () => {
         try {
-          const response = await axios.get(
+          const response = await axiosInstance.get(
             `${import.meta.env.VITE_API_URL}/api/users/search?type=${searchType}&query=${searchQuery}`,
             { withCredentials: true }
           );

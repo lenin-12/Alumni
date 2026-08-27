@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 import { FaUserShield, FaUserPlus, FaSpinner, FaSearch, FaUser } from "react-icons/fa";
 
@@ -12,7 +12,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${import.meta.env.VITE_API_URL}/api/users/admin/allUsers`,
         { withCredentials: true }
       );
@@ -31,7 +31,7 @@ const UserManagement = () => {
   const handlePromote = async (userId) => {
     setActionLoadingId(userId);
     try {
-      const response = await axios.patch(
+      const response = await axiosInstance.patch(
         `${import.meta.env.VITE_API_URL}/api/users/${userId}/promote`,
         {},
         { withCredentials: true }
@@ -48,7 +48,7 @@ const UserManagement = () => {
   const handleDemote = async (userId) => {
     setActionLoadingId(userId);
     try {
-      const response = await axios.patch(
+      const response = await axiosInstance.patch(
         `${import.meta.env.VITE_API_URL}/api/users/${userId}/demote`,
         {},
         { withCredentials: true }

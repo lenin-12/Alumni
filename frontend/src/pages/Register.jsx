@@ -1,6 +1,6 @@
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import GoogleRegister from "../loginComponents/GoogleRegister";
 
 import { 
@@ -158,7 +158,7 @@ function Register() {
         formData.append("imageUrl", image);
       }
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, formData, {
+      await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true
       });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 import { Link } from "react-router-dom";
 import { Send, Search, User, MessageSquare, ArrowLeft } from "lucide-react";
@@ -22,10 +22,10 @@ const Chat = () => {
 
     const [triggerEffect, setTriggerEffect] = useState(0);
 
-    // Fetch recent contacts on mount or when messages change
+   
     useEffect(() => {
         if (!userId) return;
-        axios.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
+        axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
             .then(response => setRecentUsers(response.data))
             .catch(error => console.error("Error fetching recent contacts:", error));
     }, [userId]);
@@ -55,7 +55,7 @@ const Chat = () => {
             });
 
             // Update recent users list
-            axios.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
+            axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
                 .then(response => setRecentUsers(response.data))
                 .catch(error => console.error("Error updating recent contacts:", error));
         });
@@ -93,7 +93,7 @@ const Chat = () => {
     // Fetch message history when selected receiver changes
     useEffect(() => {
         if (!userId || !receiverId) return;
-        axios.get(`${import.meta.env.VITE_API_URL}/api/chat/history/${userId}/${receiverId}`)
+        axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/history/${userId}/${receiverId}`)
             .then(response => setMessages(response.data))
             .catch(error => console.error("Error fetching messages:", error));
         scrollToBottom();   
@@ -151,7 +151,7 @@ const Chat = () => {
             setSearchResults([]);
             return;
         }
-        axios.get(`${import.meta.env.VITE_API_URL}/api/searchchat?query=${searchQuery}`)
+        axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/searchchat?query=${searchQuery}`)
             .then(response => {
                 const filteredResults = response.data.filter(user => user.role !== "ADMIN" && user.id !== userId);
                 setSearchResults(filteredResults);
@@ -162,7 +162,7 @@ const Chat = () => {
     // Refresh contacts list when messages state changes
     useEffect(() => {
         if (userId) {
-            axios.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
+            axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
                 .then(response => setRecentUsers(response.data))
                 .catch(error => console.error("Error refreshing recent users:", error));
         }

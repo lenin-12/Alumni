@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 import { Link } from "react-router-dom";
 import { Send, Plus, Users, MessageSquare, ArrowLeft, LogOut, Search, X } from "lucide-react";
@@ -132,7 +132,7 @@ const GroupChat = () => {
     };
 
     const performExitGroup = (groupId) => {
-        axios.post(`${import.meta.env.VITE_API_URL}/api/chat/groups/exit`, {groupId, userId}, { withCredentials: true })
+        axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/chat/groups/exit`, {groupId, userId}, { withCredentials: true })
             .then(() => {
                 toast.success("You have successfully exited the group");
                 setGroupMembers((prev) => prev.filter((member) => member !== userId));
@@ -210,7 +210,7 @@ const GroupChat = () => {
     useEffect(() => {
         if (!userId) return;
     
-        axios.get(`${import.meta.env.VITE_API_URL}/api/chat/groups`, { withCredentials: true })
+        axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/groups`, { withCredentials: true })
             .then(response => {
                 const allGroups = response.data;
                 const joinedGroups = [];
@@ -294,7 +294,7 @@ const GroupChat = () => {
     useEffect(() => {
         if (selectedGroup == null) return;
 
-        axios.get(`${import.meta.env.VITE_API_URL}/api/searchchat/groups/${selectedGroup.id}/members`, { withCredentials: true })
+        axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/searchchat/groups/${selectedGroup.id}/members`, { withCredentials: true })
             .then(response => {
                 setGroupMembers(response.data.map(member => (member.id || member._id || member).toString()));
 
@@ -304,7 +304,7 @@ const GroupChat = () => {
                 });
 
                 if (isCurrentUserMember) {
-                    axios.get(`${import.meta.env.VITE_API_URL}/api/chat/groups/${selectedGroup.id}/messages`, { withCredentials: true })
+                    axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/groups/${selectedGroup.id}/messages`, { withCredentials: true })
                         .then(res => setGroupMessages(res.data))
                         .catch(error => console.error("Error fetching group messages:", error));
                 }
@@ -313,7 +313,7 @@ const GroupChat = () => {
     }, [selectedGroup, userId]);
 
     const joinGroup = (groupId) => {
-        axios.post(`${import.meta.env.VITE_API_URL}/api/chat/groups/${groupId}/join`, { userId }, { withCredentials: true })
+        axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/chat/groups/${groupId}/join`, { userId }, { withCredentials: true })
             .then(() => {
                 toast.success("You have successfully joined the group!");
                 setJoinStatus("You have successfully joined the group!");
@@ -341,7 +341,7 @@ const GroupChat = () => {
             return;
         }
         
-        axios.post(`${import.meta.env.VITE_API_URL}/api/chat/groups`, { name: groupName, createdBy: userId }, { withCredentials: true })
+        axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/chat/groups`, { name: groupName, createdBy: userId }, { withCredentials: true })
             .then(response => {
                 const newGroup = response.data;
                 setGroups(prev => ({

@@ -30,7 +30,7 @@ const AlumniList = () => {
   const fetchAlumni = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, { withCredentials: true });
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users`, { withCredentials: true });
       const alumniData = response.data;
       setAlumni(alumniData);
       setFilteredAlumni(alumniData);
@@ -44,7 +44,7 @@ const AlumniList = () => {
 
   const fetchConnections = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${import.meta.env.VITE_API_URL}/api/connections/user/${user.id}`,
         { withCredentials: true }
       );
@@ -78,7 +78,7 @@ const AlumniList = () => {
 
   const sendRequest = async (receiverId) => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/connections/send/${user.id}/${receiverId}`, {}, { withCredentials: true });
+      await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/connections/send/${user.id}/${receiverId}`, {}, { withCredentials: true });
       setConnections(prev => ({ ...prev, [receiverId]: 'PENDING' }));
       toast.success("Connection request sent!");
     } catch (error) {
@@ -220,7 +220,7 @@ const AlumniList = () => {
 
   const deleteAlumni = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${id}`, { withCredentials: true });
+      await axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/users/${id}`, { withCredentials: true });
       setAlumni(alumni.filter((alumnus) => alumnus.id !== id));
       toast.success("Alumni deleted successfully");
     } catch (error) {

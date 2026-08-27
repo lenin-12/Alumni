@@ -1,147 +1,5 @@
-// import React, { useEffect, useState } from "react";
-// import axios from "axios";
-// import { useParams, useNavigate } from "react-router-dom";
-// import { useUser } from "../UserContext";
-// import { FaBuilding, FaUserTie, FaMapMarkerAlt, FaCalendarAlt, FaEdit, FaTrash } from "react-icons/fa";
-// import { toast } from 'react-toastify';
-
-// const AlumniAchievements = () => {
-//   const { alumniId } = useParams();
-//   const [achievements, setAchievements] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState("");
-//   const { user, logoutUser } = useUser();
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     const fetchAchievements = async () => {
-//       try {
-//         const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/achievements/user/${alumniId}`, { withCredentials: true });
-//         const achievementsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
-//         setAchievements(achievementsArray);
-//         // setAchievements(response.data);
-//       } catch (error) {
-//         toast.error("Failed to fetch achievements.");
-//         setError("Failed to fetch achievements.");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchAchievements();
-//   }, [alumniId]);
-
-//   const handleDelete = async (achievementId) => {
-//     // Show confirmation toast with action buttons
-//     toast.info(
-//       <div>
-//         <p>Are you sure you want to delete this achievement?</p>
-//         <div className="mt-2 flex justify-center space-x-3">
-//           <button 
-//             className="bg-red-500 text-white px-3 py-1 rounded"
-//             onClick={() => {
-//               toast.dismiss();
-//               deleteAchievement(achievementId);
-//             }}
-//           >
-//             Yes, Delete
-//           </button>
-//           <button 
-//             className="bg-gray-500 text-white px-3 py-1 rounded"
-//             onClick={() => toast.dismiss()}
-//           >
-//             Cancel
-//           </button>
-//         </div>
-//       </div>,
-//       {
-//         autoClose: false,
-//         closeOnClick: false,
-//         draggable: false,
-//         closeButton: false
-//       }
-//     );
-//   };
-  
-//   const deleteAchievement = async (achievementId) => {
-//     try {
-//       await axios.delete(`${import.meta.env.VITE_API_URL}/api/achievements/${achievementId}`, { withCredentials: true });
-//       setAchievements(achievements.filter(achievement => achievement.id !== achievementId));
-//       toast.success("Achievement deleted successfully");
-//     } catch (error) {
-//       toast.error("Failed to delete achievement experience.");
-//     }
-//   };
-
-//   const handleEdit = (achievementId) => {
-//     navigate(`/edit-achievement/${achievementId}`); // Redirect to edit page (customize this route as needed)
-//   };
-
-//   if (loading) return <p className="text-center text-gray-600">Loading achievements...</p>;
-//   if (error) return <p className="text-center text-red-500">{error}</p>;
-
-//   return (
-//     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
-//       <h2 className="text-4xl font-bold mb-6 text-gray-900">Achievements</h2>
-
-//       {/* Wrapper Box with Background Color */}
-//       <div className="bg-blue-100 p-6 rounded-xl shadow-lg w-full max-w-7xl">
-//         {achievements.length === 0 ? (
-//           <p className="text-gray-600 text-center">No achievements found for this alumni.</p>
-//         ) : (
-//           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-//             {achievements.map((achievement) => (
-//               <div
-//                 key={achievement.id}
-//                 className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:scale-105 relative group"
-//               >
-//                 {/* Image Section */}
-//                 {achievement.supportingDocuments && (
-//                   <img
-//                     src={achievement.supportingDocuments}
-//                     alt="Achievement"
-//                     className="w-full h-48 object-cover"
-//                   />
-//                 )}
-
-//                 {/* Content Section */}
-//                 <div className="p-5">
-//                   <h3 className="text-2xl font-semibold text-gray-900">{achievement.title}</h3>
-//                   <p className="text-gray-600 text-sm mb-2">{achievement.category}</p>
-//                   <p className="text-gray-500 text-sm">
-//                     📅 {new Date(achievement.dateOfAchievement).toLocaleDateString()}
-//                   </p>
-//                   <p className="mt-3 text-gray-700">{achievement.description}</p>
-//                   <p className="text-blue-600 text-sm mt-2">🏢 Recognized by: {achievement.organization}</p>
-//                   {user.id == alumniId && (
-//                     <div className="absolute top-3 right-3 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-//                       <button
-//                         onClick={() => handleEdit(achievement.id)}
-//                         className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-700 transition"
-//                       >
-//                         <FaEdit />
-//                       </button>
-//                       <button
-//                         onClick={() => handleDelete(achievement.id)}
-//                         className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-700 transition"
-//                       >
-//                         <FaTrash />
-//                       </button>
-//                     </div>
-//                   )}
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AlumniAchievements;
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useUser } from "../UserContext";
 import { 
@@ -191,7 +49,7 @@ const AlumniAchievements = () => {
       setLoading(true);
       try {
         // Fetch achievements
-        const achievementsResponse = await axios.get(
+        const achievementsResponse = await axiosInstance.get(
           `${import.meta.env.VITE_API_URL}/api/achievements/user/${alumniId}`, 
           { withCredentials: true }
         );
@@ -200,7 +58,7 @@ const AlumniAchievements = () => {
         setAchievements(achievementsArray.sort((a, b) => new Date(b.dateOfAchievement) - new Date(a.dateOfAchievement)));
         
         // Fetch alumni info
-        const alumniResponse = await axios.get(
+        const alumniResponse = await axiosInstance.get(
           `${import.meta.env.VITE_API_URL}/api/users/${alumniId}`, 
           { withCredentials: true }
         );
@@ -250,7 +108,7 @@ const AlumniAchievements = () => {
   
   const deleteAchievement = async (achievementId) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/achievements/${achievementId}`, { withCredentials: true });
+      await axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/achievements/${achievementId}`, { withCredentials: true });
       setAchievements(achievements.filter(achievement => achievement.id !== achievementId));
       toast.success("Achievement deleted successfully");
     } catch (error) {

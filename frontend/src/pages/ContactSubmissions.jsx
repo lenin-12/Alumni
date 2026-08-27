@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 import { FaEnvelope, FaTrash, FaCheck, FaInbox, FaSearch, FaSpinner, FaExclamationTriangle, FaClock, FaCalendarAlt, FaComment } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,7 @@ function ContactSubmissions() {
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/contact/all`, {withCredentials:true});
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/contact/all`, {withCredentials:true});
       setSubmissions(response.data);
     } catch (error) {
       console.error("Error fetching contact submissions:", error);
@@ -53,7 +53,7 @@ function ContactSubmissions() {
 
   const markAsResolved = async (id) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/contact/${id}/resolve`, {}, {withCredentials:true});
+      await axiosInstance.put(`${import.meta.env.VITE_API_URL}/api/contact/${id}/resolve`, {}, {withCredentials:true});
       toast.success("Marked as resolved");
       fetchSubmissions();
     } catch (error) {
@@ -96,7 +96,7 @@ function ContactSubmissions() {
 
   const performDelete = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/contact/${id}`, {withCredentials: true});
+      await axiosInstance.delete(`${import.meta.env.VITE_API_URL}/api/contact/${id}`, {withCredentials: true});
       toast.success("Message deleted successfully");
       fetchSubmissions();
     } catch (error) {

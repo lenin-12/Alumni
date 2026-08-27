@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 
 import { 
@@ -121,7 +120,7 @@ function UpdateProfile() {
         formData.append("image", image);
       }
 
-      await axios.put(
+      await axiosInstance.put(
         `${import.meta.env.VITE_API_URL}/api/users/${user.id}/updateProfile`,
         formData,
         {
