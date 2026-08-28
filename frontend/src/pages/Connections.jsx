@@ -3,7 +3,7 @@ import { FaUserCheck, FaUserTimes, FaUserClock, FaUserPlus } from "react-icons/f
 import { toast } from 'react-toastify';
 import { useUser } from "../UserContext";
 import axiosInstance from "../utils/axiosInstance";
-const axios = axiosInstance;   
+
 const Connections = () => {
     const [pending, setPending] = useState([]);
     const [accepted, setAccepted] = useState([]);
@@ -23,8 +23,8 @@ const Connections = () => {
     const fetchConnections = async () => {
         try {
             const [pendingRes, acceptedRes] = await Promise.all([
-                axios.get(`${import.meta.env.VITE_API_URL}/api/connections/pending/${user.id}`, { withCredentials: true }),
-                axios.get(`${import.meta.env.VITE_API_URL}/api/connections/accepted/${user.id}`, { withCredentials: true })
+                axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/connections/pending/${user.id}`, { withCredentials: true }),
+                axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/connections/accepted/${user.id}`, { withCredentials: true })
             ]);
             setPending(pendingRes.data);
             setAccepted(acceptedRes.data);
@@ -38,7 +38,7 @@ const Connections = () => {
 
     const acceptRequest = async (requestId) => {
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/connections/accept/${requestId}`,{},{ withCredentials: true });
+            await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/connections/accept/${requestId}`,{},{ withCredentials: true });
             const updatedRequest = pending.find(req => req.id === requestId);
             setPending(prev => prev.filter(req => req.id !== requestId));
             setAccepted(prev => [...prev, { ...updatedRequest, status: 'ACCEPTED' }]);
@@ -51,7 +51,7 @@ const Connections = () => {
 
     const rejectRequest = async (requestId) => {
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/connections/reject/${requestId}`, {}, { withCredentials: true });
+            await axiosInstance.post(`${import.meta.env.VITE_API_URL}/api/connections/reject/${requestId}`, {}, { withCredentials: true });
             setPending(prev => prev.filter(req => req.id !== requestId));
             toast.success("Connection request rejected");
         } catch (error) {

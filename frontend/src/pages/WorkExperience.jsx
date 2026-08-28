@@ -27,10 +27,10 @@ const WorkExperienceList = () => {
             const uniqueCompanies = [...new Set(workExperiences.map(exp => exp.company))];
             setCompanies(uniqueCompanies.sort());
             
-            // Apply filters
+            // Apply filters , create a shallow copy 
             let filtered = [...workExperiences];
             
-            if (searchTerm) {
+            if(searchTerm){
                 const lowercaseSearch = searchTerm.toLowerCase();
                 filtered = filtered.filter(exp => 
                     (exp.company && exp.company.toLowerCase().includes(lowercaseSearch)) ||
@@ -41,7 +41,7 @@ const WorkExperienceList = () => {
                 );
             }
             
-            if (filterCompany) {
+            if(filterCompany){
                 filtered = filtered.filter(exp => exp.company === filterCompany);
             }
             
@@ -55,19 +55,19 @@ const WorkExperienceList = () => {
             let workExpArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
             
             // Fetch user details for each work experience
-            const updatedWorkExperiences = await Promise.all(
-                workExpArray.map(async (workExp) => {
-                    try {
-                        const userResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/${workExp.user.id}`, { withCredentials: true });
-                        return { ...workExp, user: userResponse.data }; // Add user data to work experience
-                    } catch {
-                        return { ...workExp, user: null }; // Handle errors (user not found, etc.)
-                    }
-                })
-            );
+            // const updatedWorkExperiences = await Promise.all(
+            //     workExpArray.map(async (workExp) => {
+            //         try {
+            //             const userResponse = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users/${workExp.user.id}`, { withCredentials: true });
+            //             return { ...workExp, user: userResponse.data }; // Add user data to work experience
+            //         } catch {
+            //             return { ...workExp, user: null }; // Handle errors (user not found, etc.)
+            //         }
+            //     })
+            // );
     
-            setWorkExperiences(updatedWorkExperiences);
-            setFilteredExperiences(updatedWorkExperiences);
+            setWorkExperiences(workExpArray);
+            setFilteredExperiences(workExpArray);
         } catch {
             setError("Failed to fetch work experiences");
         } finally {

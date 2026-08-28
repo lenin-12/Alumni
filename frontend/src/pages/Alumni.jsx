@@ -4,7 +4,7 @@ import { FaTrashAlt, FaUserGraduate, FaUsers, FaSearch, FaFilter, FaBuilding, Fa
 import { toast } from 'react-toastify';
 import { useUser } from "../UserContext";
 import axiosInstance from "../utils/axiosInstance";
-const axios = axiosInstance;   // rename via alias
+
 
 const AlumniList = () => {
   const [alumni, setAlumni] = useState([]);

@@ -1,7 +1,7 @@
 const WorkExperience = require('../models/WorkExperience');
 const { awardPoints, deductPoints } = require('../utils/points');
 
-// Map WorkExperience model to frontend expected output structure
+
 const mapWorkExperienceResponse = (exp) => {
     if (!exp) return null;
     return {
@@ -21,7 +21,7 @@ const mapWorkExperienceResponse = (exp) => {
     };
 };
 
-// Get all work experience listings
+
 const getWorkExperiences = async (req, res) => {
     try {
         const workExps = await WorkExperience.find()
@@ -35,7 +35,7 @@ const getWorkExperiences = async (req, res) => {
     }
 };
 
-// Get single work experience by ID
+
 const getWorkExperienceById = async (req, res) => {
     try {
         const exp = await WorkExperience.findById(req.params.id);
