@@ -45,36 +45,38 @@ const AlumniList = () => {
 
   const fetchConnections = async () => {
     try {
-      const response = await axiosInstance.get(
-        `${import.meta.env.VITE_API_URL}/api/connections/user/${user.id}`,
-        { withCredentials: true }
-      );
-  
-      const { pending, accepted } = response.data; // Destructure response
-     
-      // Process pending connections
+      const response = await axiosInstance.get(`/api/connections/user/${user.id}`);
+      console.log("RAW response.data:", response.data);   
+
+      const { pending, accepted } = response.data;
+      console.log("pending array:", pending);   
+      console.log("accepted array:", accepted);   
+
+      const newConnections = {};
+
       pending.forEach((conn) => {
+        console.log("🔵 processing pending conn:", conn, "| sender.id:", conn.sender.id, "| receiver.id:", conn.receiver.id, "| my user.id:", user.id);   // 👈 ADD THIS
         if (conn.sender.id === user.id) {
-          connections[conn.receiver.id] = "PENDING";
+          newConnections[conn.receiver.id] = "PENDING";
         } else {
-          connections[conn.sender.id] = "PENDING";
+          newConnections[conn.sender.id] = "PENDING";
         }
       });
-  
-      // Process accepted connections
+
       accepted.forEach((conn) => {
         if (conn.sender.id === user.id) {
-          connections[conn.receiver.id] = "ACCEPTED";
+          newConnections[conn.receiver.id] = "ACCEPTED";
         } else {
-          connections[conn.sender.id] = "ACCEPTED";
+          newConnections[conn.sender.id] = "ACCEPTED";
         }
       });
-  
-      setConnections(connections);
+
+      console.log("FINAL newConnections object:", newConnections);  
+      setConnections(newConnections);
     } catch (error) {
       console.error("Error fetching connections:", error);
     }
-  };
+};
   
 
   const sendRequest = async (receiverId) => {
