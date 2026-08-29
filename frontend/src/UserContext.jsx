@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
-import { setAccessToken } from "./utils/axiosInstance";
+import axiosInstance, { setAccessToken } from "./utils/axiosInstance";
 
 const UserContext = createContext();
 
@@ -39,7 +39,7 @@ export function UserProvider({ children }) {
   // Fetch updated user data from backend
   const fetchUserData = async (userId) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/${userId}`);
+      const response = await axiosInstance.get(`/api/users/${userId}`);
       const data = response.data;
       setUser((prevUser) => ({
         ...prevUser, // Keep existing properties

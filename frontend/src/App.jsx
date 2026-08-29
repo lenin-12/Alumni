@@ -34,7 +34,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import Connection from "../../backend/src/models/Connection";
+
 
 function App() {
   return (
