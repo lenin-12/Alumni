@@ -56,6 +56,8 @@ axiosInstance.interceptors.response.use(
 
       try {
         const { data } = await axiosInstance.post("/api/auth/refresh");
+        if(!data) console.log(data);
+        else console.log("refresh request sent and came", data);
         setAccessToken(data.token);
         processQueue(null, data.token);
         originalRequest.headers.Authorization = `Bearer ${data.token}`;

@@ -22,9 +22,10 @@ const AlumniList = () => {
   const isAdmin = user && user.role === "ADMIN";
 
   useEffect(() => {
+    if (!user?.id) return;
     fetchAlumni();
     fetchConnections();
-  }, []);
+  }, [user]);
 
 
   const fetchAlumni = async () => {
