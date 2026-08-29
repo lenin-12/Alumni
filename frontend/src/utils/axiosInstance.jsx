@@ -38,8 +38,9 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const isExpired = error.response?.status === 401 && error.response?.data?.code === "TOKEN_EXPIRED";
-
+    console.log("🔴 Interceptor caught error. Status:", error.response?.status, "Code:", error.response?.data?.code, "isExpired:", isExpired, "_retry:", originalRequest._retry);
     if (isExpired && !originalRequest._retry) {
+      console.log("🟡 Entering refresh block");
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           pendingQueue.push({ resolve, reject });
