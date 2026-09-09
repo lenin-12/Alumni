@@ -46,7 +46,7 @@ const AlumniList = () => {
   const fetchConnections = async () => {
     try {
       const response = await axiosInstance.get(`/api/connections/user/${user.id}`);
-      console.log("RAW response.data:", response.data);   
+      console.log("RAW responsedata:", response.data);   
 
       const { pending, accepted } = response.data;
       console.log("pending array:", pending);   

@@ -32,7 +32,7 @@ const Chat = () => {
 
     // WebSocket / Socket.io Connection Management
     useEffect(() => {
-        if (!userId) return;
+        if(!userId) return;
 
         // Initialize socket.io connection
         const newSocket = io(import.meta.env.VITE_API_URL, {
@@ -53,11 +53,6 @@ const Chat = () => {
                 }
                 return [...prev, parsedMessage];
             });
-
-            // Update recent users list
-            axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
-                .then(response => setRecentUsers(response.data))
-                .catch(error => console.error("Error updating recent contacts:", error));
         });
 
         // Listen for message sent confirmations
@@ -71,7 +66,7 @@ const Chat = () => {
             });
         });
 
-        // Listen for message updates (edits)
+        // Listen for message updates
         newSocket.on("messageUpdated", (updatedMessage) => {
             setMessages((prev) => prev.map(msg =>
                 (msg.id || msg._id) === (updatedMessage.id || updatedMessage._id) ? updatedMessage : msg
@@ -93,27 +88,37 @@ const Chat = () => {
     // Fetch message history when selected receiver changes
     useEffect(() => {
         if (!userId || !receiverId) return;
+        let cancelled = false;
+
         axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/history/${userId}/${receiverId}`)
-            .then(response => setMessages(response.data))
+            .then(response => {
+                if (!cancelled) {
+                    setMessages(response.data);
+                    scrollToBottom();
+                }
+            })
             .catch(error => console.error("Error fetching messages:", error));
-        scrollToBottom();   
+
+        return () => {
+            cancelled = true;
+        };
     }, [userId, receiverId]);
 
     const updateMessage = (id, newContent) => {
-        if (socket) {
+        if(socket){
             socket.emit("messageUpdate", { id, content: newContent });
         }
     };
 
     const deleteMessage = (id) => {
-        if (socket) {
+        if(socket){
             socket.emit("messageDelete", { id });
             setEditingIndex(null);
         }
     };
 
     const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if(e.key === 'Enter' && !e.shiftKey){
             e.preventDefault();
             sendMessage();
         }
@@ -131,11 +136,11 @@ const Chat = () => {
 
     const menuRefs = useRef([]);
     const handleClickOutside = (event) => {
-        if (
+        if(
             menuRefs.current[editingIndex] && 
             !menuRefs.current[editingIndex].contains(event.target) && 
             event.target.tagName !== "INPUT"
-        ) {
+        ){
             setEditingIndex(null);
         }
     };
@@ -147,7 +152,7 @@ const Chat = () => {
 
     // Search users logic
     useEffect(() => {
-        if (searchQuery.length === 0) {
+        if(searchQuery.length === 0){
             setSearchResults([]);
             return;
         }
@@ -161,7 +166,7 @@ const Chat = () => {
 
     // Refresh contacts list when messages state changes
     useEffect(() => {
-        if (userId) {
+        if(userId){
             axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/recent/${userId}`, { withCredentials: true })
                 .then(response => setRecentUsers(response.data))
                 .catch(error => console.error("Error refreshing recent users:", error));
@@ -188,7 +193,7 @@ const Chat = () => {
     const chatContainerRef = useRef(null);
 
     const scrollToBottom = () => {
-        if (chatContainerRef.current) {
+        if(chatContainerRef.current){
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     };

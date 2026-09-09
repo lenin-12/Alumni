@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import axiosInstance, { setAccessToken } from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 import GoogleLoginButton from "../loginComponents/GoogleLogin";
-
 import { toast } from "react-toastify";
 import { FaEnvelope, FaLock, FaSignInAlt, FaUserPlus, FaArrowLeft } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -54,8 +53,6 @@ function Login() {
         }
       }
     } catch (error) {
-      // Show what actually happened instead of always assuming bad credentials —
-      // a 404/network error means something is misconfigured, not that the password is wrong.
       if (error.response?.status === 401) {
         setErrorMessage("Login failed! Invalid email or password.");
         toast.error("Login failed! Invalid email or password.");

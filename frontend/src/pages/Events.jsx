@@ -50,6 +50,20 @@ function Events() {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+    // Fetch all events
+    const fetchEvents = async () => {
+      try {
+        const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/events`, { withCredentials: true });
+        const eventsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
+        setEvents(eventsArray);
+        setFilteredEvents(eventsArray);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        toast.error("Failed to fetch events");
+      }
+    };
+    
   
   useEffect(() => {
     let result = events;
@@ -181,19 +195,7 @@ function Events() {
     }
   };
 
-  // Fetch all events
-  const fetchEvents = async () => {
-    try {
-      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/events`, { withCredentials: true });
-      const eventsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
-      setEvents(eventsArray);
-      setFilteredEvents(eventsArray);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      toast.error("Failed to fetch events");
-    }
-  };
-  
+
   const clearFilters = () => {
     setSearchTerm("");
     setFilterType("");

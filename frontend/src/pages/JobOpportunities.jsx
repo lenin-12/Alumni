@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-
 import axiosInstance from "../utils/axiosInstance";
 import { useUser } from "../UserContext";
 import { 
@@ -9,7 +8,6 @@ import {
   FaInfoCircle, FaCheckCircle
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -61,30 +59,6 @@ function JobOpportunities() {
   useEffect(() => {
     fetchJobs();
   }, []);
-  
-  useEffect(() => {
-    let result = jobs;
-    
-    // Apply search filter
-    if (searchTerm) {
-      const lowercasedSearch = searchTerm.toLowerCase();
-      result = result.filter(job => 
-        job.title.toLowerCase().includes(lowercasedSearch) ||
-        job.company.toLowerCase().includes(lowercasedSearch) ||
-        job.skills.toLowerCase().includes(lowercasedSearch) ||
-        job.description.toLowerCase().includes(lowercasedSearch)
-      );
-    }
-    
-    // Apply job type filter
-    if (filterType) {
-      result = result.filter(job => 
-        job.jobType.toLowerCase() === filterType.toLowerCase()
-      );
-    }
-    
-    setFilteredJobs(result);
-  }, [jobs, searchTerm, filterType]);
 
   const fetchJobs = async () => {
     try {
@@ -97,18 +71,38 @@ function JobOpportunities() {
       toast.error("Failed to load job opportunities");
     }
   };
-
+  
+  useEffect(() => {
+    let result = jobs;
+    
+    if(searchTerm){
+      const lowercasedSearch = searchTerm.toLowerCase();
+      result = result.filter(job => 
+        job.title.toLowerCase().includes(lowercasedSearch) ||
+        job.company.toLowerCase().includes(lowercasedSearch) ||
+        job.skills.toLowerCase().includes(lowercasedSearch) ||
+        job.description.toLowerCase().includes(lowercasedSearch)
+      );
+    }
+    
+    if(filterType){
+      result = result.filter(job => 
+        job.jobType.toLowerCase() === filterType.toLowerCase()
+      );
+    }
+    
+    setFilteredJobs(result);
+  }, [jobs, searchTerm, filterType]);
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    // Clear error when field is updated
-    if (formErrors[name]) {
+
+    if(formErrors[name]){
       setFormErrors({
         ...formErrors,
         [name]: null
       });
     }
-    
     setFormData({ ...formData, [name]: value });
   };
   
@@ -133,7 +127,6 @@ function JobOpportunities() {
       toast.error("Please fill all required fields");
       return;
     }
-    
     setIsSubmitting(true);
     
     try {
@@ -212,7 +205,7 @@ function JobOpportunities() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FAF6F0] to-[#FAF6F0] py-12 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
+        {/* Header section */}
         {!showForm && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -229,7 +222,7 @@ function JobOpportunities() {
           </motion.div>
         )}
 
-        {/* Search and Filter */}
+        {/* Search and filter section */}
         {!showForm && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -276,7 +269,7 @@ function JobOpportunities() {
           </motion.div>
         )}
 
-        {/* Post Job Button */}
+        {/* Post job button */}
         {user && user.firstName && !showForm && (
           <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
@@ -290,7 +283,7 @@ function JobOpportunities() {
           </motion.button>
         )}
 
-        {/* Job Posting Form */}
+        {/* Job posting form */}
         <AnimatePresence>
           {showForm && user && user.firstName && (
             <motion.div 

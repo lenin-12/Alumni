@@ -8,6 +8,10 @@ const getRecentContacts = async (req, res) => {
     try {
         const { userId } = req.params;
 
+        if (req.user.id !== userId) {
+            return res.status(403).json({ success: false, message: 'Not authorized to view these contacts' });
+        }
+
         // Find all messages involving the user
         const messages = await ChatMessage.find({
             $or: [{ senderId: userId }, { receiverId: userId }]
@@ -39,6 +43,10 @@ const getRecentContacts = async (req, res) => {
 const getChatHistory = async (req, res) => {
     try {
         const { userId, receiverId } = req.params;
+
+        if (req.user.id !== userId && req.user.id !== receiverId) {
+            return res.status(403).json({ success: false, message: 'Not authorized to view this conversation' });
+        }
 
         const messages = await ChatMessage.find({
             $or: [

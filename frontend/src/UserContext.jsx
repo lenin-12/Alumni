@@ -1,91 +1,62 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
-import axios from "axios";
-import axiosInstance, { setAccessToken } from "./utils/axiosInstance";
+import axiosInstance from "./utils/axiosInstance";
 
 const UserContext = createContext();
 
-
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        return parsed;
-      }
-      return null;
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      return null;
-    }
-  });
+ 
+  const [user, setUser] = useState(null);
 
-  const [token, setToken] = useState(() => {
-    const storedToken = localStorage.getItem("token") || null;
-    if (storedToken) {
-      setAccessToken(storedToken);
-    }
-    return storedToken;
-  });
-
-  // Set default authorization header if token exists
-  if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete axios.defaults.headers.common['Authorization'];
-  }
-
-  // Fetch updated user data from backend
+ 
   const fetchUserData = async (userId) => {
     try {
       const response = await axiosInstance.get(`/api/users/${userId}`);
+
       const data = response.data;
+
       setUser((prevUser) => ({
-        ...prevUser, // Keep existing properties
-        ...data, // Update with new data
+        ...prevUser,
+        ...data,
       }));
+
+      return data;
     } catch (error) {
       console.error("Error fetching user data:", error);
+      throw error;
     }
   };
 
-  const loginUser = (userData, userToken) => {
+  
+  const loginUser = (userData) => {
     setUser(userData);
-    if (userToken) {
-      setToken(userToken);
-      localStorage.setItem("token", userToken);
-      setAccessToken(userToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
-    }
   };
 
-  const logoutUser = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    setAccessToken(null);
-    delete axios.defaults.headers.common['Authorization'];
-  };
 
-  // Sync user state with localStorage whenever it changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("user");
+  const logoutUser = async () => {
+    try {
+      await axiosInstance.post("/api/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setUser(null);
     }
-  }, [user]);
+  };
 
   return (
-    <UserContext.Provider value={{ user, loginUser, logoutUser, fetchUserData }}>
+    <UserContext.Provider
+      value={{
+        user,
+        setUser,
+        loginUser,
+        logoutUser,
+        fetchUserData,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
 }
+
 export function useUser() {
   return useContext(UserContext);
 }
-
-
