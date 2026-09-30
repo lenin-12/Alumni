@@ -2,315 +2,232 @@ const ChatMessage = require('../models/ChatMessage');
 const ChatGroup = require('../models/ChatGroup');
 const GroupMessage = require('../models/GroupMessage');
 const User = require('../models/User');
-
+const AppError = require('../utils/AppError');
 
 const getRecentContacts = async (req, res) => {
-    try {
-        const { userId } = req.params;
+    const { userId } = req.params;
 
-        if (req.user.id !== userId) {
-            return res.status(403).json({ success: false, message: 'Not authorized to view these contacts' });
-        }
-
-        // Find all messages involving the user
-        const messages = await ChatMessage.find({
-            $or: [{ senderId: userId }, { receiverId: userId }]
-        }).sort({ createdAt: -1 });
-
-        // Extract unique user IDs of contacts
-        const contactIds = new Set();
-        messages.forEach(msg => {
-            if (msg.senderId.toString() !== userId) {
-                contactIds.add(msg.senderId.toString());
-            }
-            if (msg.receiverId.toString() !== userId) {
-                contactIds.add(msg.receiverId.toString());
-            }
-        });
-
-        // Query details for each contact
-        const contacts = await User.find({ _id: { $in: Array.from(contactIds) } })
-            .select('name lastName email imageUrl role batch department');
-
-        res.json(contacts);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (req.user.id !== userId) {
+        throw new AppError('Not authorized to view these contacts', 403);
     }
+
+    const messages = await ChatMessage.find({
+        $or: [{ senderId: userId }, { receiverId: userId }]
+    }).sort({ createdAt: -1 });
+
+    const contactIds = new Set();
+    messages.forEach(msg => {
+        if (msg.senderId.toString() !== userId) {
+            contactIds.add(msg.senderId.toString());
+        }
+        if (msg.receiverId.toString() !== userId) {
+            contactIds.add(msg.receiverId.toString());
+        }
+    });
+
+    const contacts = await User.find({ _id: { $in: Array.from(contactIds) } })
+        .select('name lastName email imageUrl role batch department');
+
+    res.json(contacts);
 };
 
-// GET /api/chat/history/:userId/:receiverId
-// Returns direct chat message history between two users
 const getChatHistory = async (req, res) => {
-    try {
-        const { userId, receiverId } = req.params;
+    const { userId, receiverId } = req.params;
 
-        if (req.user.id !== userId && req.user.id !== receiverId) {
-            return res.status(403).json({ success: false, message: 'Not authorized to view this conversation' });
-        }
-
-        const messages = await ChatMessage.find({
-            $or: [
-                { senderId: userId, receiverId: receiverId },
-                { senderId: receiverId, receiverId: userId }
-            ]
-        }).sort({ createdAt: 1 });
-
-        res.json(messages);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (req.user.id !== userId && req.user.id !== receiverId) {
+        throw new AppError('Not authorized to view this conversation', 403);
     }
+
+    const messages = await ChatMessage.find({
+        $or: [
+            { senderId: userId, receiverId: receiverId },
+            { senderId: receiverId, receiverId: userId }
+        ]
+    }).sort({ createdAt: 1 });
+
+    res.json(messages);
 };
 
-// PUT /api/chat/edit/:id
-// Edits direct message content
 const editChatMessage = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const newContent = typeof req.body === 'string' ? req.body : req.body.content;
+    const { id } = req.params;
+    const newContent = typeof req.body === 'string' ? req.body : req.body.content;
 
-        const message = await ChatMessage.findById(id);
-        if (!message) {
-            return res.status(404).json({ success: false, message: 'Message not found' });
-        }
-
-        // Access check
-        if (req.user && message.senderId.toString() !== req.user.id) {
-            return res.status(403).json({ success: false, message: 'Not authorized to edit this message' });
-        }
-
-        message.content = newContent;
-        await message.save();
-        res.json(message);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const message = await ChatMessage.findById(id);
+    if (!message) {
+        throw new AppError('Message not found', 404);
     }
+
+    if (req.user && message.senderId.toString() !== req.user.id) {
+        throw new AppError('Not authorized to edit this message', 403);
+    }
+
+    message.content = newContent;
+    await message.save();
+    res.json(message);
 };
 
-// DELETE /api/chat/delete/:id
-// Deletes a direct message
 const deleteChatMessage = async (req, res) => {
-    try {
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const message = await ChatMessage.findById(id);
-        if (!message) {
-            return res.status(404).json({ success: false, message: 'Message not found' });
-        }
-
-        // Access check
-        if (req.user && message.senderId.toString() !== req.user.id) {
-            return res.status(403).json({ success: false, message: 'Not authorized to delete this message' });
-        }
-
-        await ChatMessage.findByIdAndDelete(id);
-        res.json({ success: true, message: 'Message deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const message = await ChatMessage.findById(id);
+    if (!message) {
+        throw new AppError('Message not found', 404);
     }
+
+    if (req.user && message.senderId.toString() !== req.user.id) {
+        throw new AppError('Not authorized to delete this message', 403);
+    }
+
+    await ChatMessage.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Message deleted successfully' });
 };
 
-// GET /api/searchchat?query=...
-// Searches for users to chat with (excluding admins and self)
 const searchChatUsers = async (req, res) => {
-    try {
-        const { query } = req.query;
-        if (!query) {
-            return res.json([]);
-        }
-
-        const regex = new RegExp(query, 'i');
-        
-        let roleCriteria = { role: { $ne: 'ADMIN' } };
-        if (req.user && req.user.role === 'ALUMNI') {
-            roleCriteria = { role: 'ALUMNI' };
-        }
-
-        const users = await User.find({
-            $and: [
-                roleCriteria,
-                { _id: { $ne: req.user.id } },
-                { $or: [{ name: regex }, { lastName: regex }, { email: regex }] }
-            ]
-        }).select('name lastName email imageUrl role batch department');
-
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const { query } = req.query;
+    if (!query) {
+        return res.json([]);
     }
+
+    const regex = new RegExp(query, 'i');
+
+    let roleCriteria = { role: { $ne: 'ADMIN' } };
+    if (req.user && req.user.role === 'ALUMNI') {
+        roleCriteria = { role: 'ALUMNI' };
+    }
+
+    const users = await User.find({
+        $and: [
+            roleCriteria,
+            { _id: { $ne: req.user.id } },
+            { $or: [{ name: regex }, { lastName: regex }, { email: regex }] }
+        ]
+    }).select('name lastName email imageUrl role batch department');
+
+    res.json(users);
 };
 
-
-// GET /api/chat/groups
-// Returns all group chats
 const getGroups = async (req, res) => {
-    try {
-        const groups = await ChatGroup.find()
-            .populate('members', 'name lastName email imageUrl')
-            .populate('createdBy', 'name lastName email');
-        res.json(groups);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    const groups = await ChatGroup.find()
+        .populate('members', 'name lastName email imageUrl')
+        .populate('createdBy', 'name lastName email');
+    res.json(groups);
 };
 
-// POST /api/chat/groups
-// Creates a new chat group
 const createGroup = async (req, res) => {
-    try {
-        const { name, createdBy, description } = req.body;
-        const creatorId = req.user ? req.user.id : createdBy;
+    const { name, createdBy, description } = req.body;
+    const creatorId = req.user ? req.user.id : createdBy;
 
-        if (!name || !creatorId) {
-            return res.status(400).json({ success: false, message: 'Group name and creator ID are required' });
-        }
-
-        const group = await ChatGroup.create({
-            name,
-            description,
-            createdBy: creatorId,
-            members: [creatorId] // Add creator to the members list initially
-        });
-
-        const populatedGroup = await ChatGroup.findById(group._id)
-            .populate('members', 'name lastName email imageUrl')
-            .populate('createdBy', 'name lastName email');
-
-        res.status(201).json(populatedGroup);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (!name || !creatorId) {
+        throw new AppError('Group name and creator ID are required', 400);
     }
+
+    const group = await ChatGroup.create({
+        name,
+        description,
+        createdBy: creatorId,
+        members: [creatorId]
+    });
+
+    const populatedGroup = await ChatGroup.findById(group._id)
+        .populate('members', 'name lastName email imageUrl')
+        .populate('createdBy', 'name lastName email');
+
+    res.status(201).json(populatedGroup);
 };
 
-// POST /api/chat/groups/:groupId/join
-// Joins a group chat
 const joinGroup = async (req, res) => {
-    try {
-        const { groupId } = req.params;
-        const { userId } = req.body;
-        const finalUserId = req.user ? req.user.id : userId;
+    const { groupId } = req.params;
+    const { userId } = req.body;
+    const finalUserId = req.user ? req.user.id : userId;
 
-        if (!finalUserId) {
-            return res.status(400).json({ success: false, message: 'User ID is required' });
-        }
-
-        const group = await ChatGroup.findById(groupId);
-        if (!group) {
-            return res.status(404).json({ success: false, message: 'Group not found' });
-        }
-
-        // Check if user is already a member
-        const isMember = group.members.some(member => member.toString() === finalUserId.toString());
-        if (isMember) {
-            return res.json({ success: true, message: 'Already joined' });
-        }
-
-        group.members.push(finalUserId);
-        await group.save();
-
-        res.json({ success: true, message: 'Joined group successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (!finalUserId) {
+        throw new AppError('User ID is required', 400);
     }
+
+    const group = await ChatGroup.findById(groupId);
+    if (!group) {
+        throw new AppError('Group not found', 404);
+    }
+
+    const isMember = group.members.some(member => member.toString() === finalUserId.toString());
+    if (isMember) {
+        return res.json({ success: true, message: 'Already joined' });
+    }
+
+    group.members.push(finalUserId);
+    await group.save();
+
+    res.json({ success: true, message: 'Joined group successfully' });
 };
 
-// POST /api/chat/groups/exit
-// Exits a group chat
 const exitGroup = async (req, res) => {
-    try {
-        const { groupId, userId } = req.body;
-        const finalUserId = req.user ? req.user.id : userId;
+    const { groupId, userId } = req.body;
+    const finalUserId = req.user ? req.user.id : userId;
 
-        if (!groupId || !finalUserId) {
-            return res.status(400).json({ success: false, message: 'Group ID and User ID are required' });
-        }
-
-        const group = await ChatGroup.findById(groupId);
-        if (!group) {
-            return res.status(404).json({ success: false, message: 'Group not found' });
-        }
-
-        group.members = group.members.filter(m => m.toString() !== finalUserId.toString());
-        await group.save();
-
-        res.json({ success: true, message: 'Exited group successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (!groupId || !finalUserId) {
+        throw new AppError('Group ID and User ID are required', 400);
     }
+
+    const group = await ChatGroup.findById(groupId);
+    if (!group) {
+        throw new AppError('Group not found', 404);
+    }
+
+    group.members = group.members.filter(m => m.toString() !== finalUserId.toString());
+    await group.save();
+
+    res.json({ success: true, message: 'Exited group successfully' });
 };
 
-// GET /api/searchchat/groups/:groupId/members
-// Returns member profile objects of a group
 const getGroupMembers = async (req, res) => {
-    try {
-        const { groupId } = req.params;
-        const group = await ChatGroup.findById(groupId).populate('members', 'name lastName email imageUrl');
-        if (!group) {
-            return res.status(404).json({ success: false, message: 'Group not found' });
-        }
-        res.json(group.members);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const { groupId } = req.params;
+    const group = await ChatGroup.findById(groupId).populate('members', 'name lastName email imageUrl');
+    if (!group) {
+        throw new AppError('Group not found', 404);
     }
+    res.json(group.members);
 };
 
-// GET /api/chat/groups/:groupId/messages
-// Returns group message history
 const getGroupMessages = async (req, res) => {
-    try {
-        const { groupId } = req.params;
-        const messages = await GroupMessage.find({ groupId })
-            .populate('senderId', 'name lastName email')
-            .sort({ createdAt: 1 });
-        res.json(messages);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    const { groupId } = req.params;
+    const messages = await GroupMessage.find({ groupId })
+        .populate('senderId', 'name lastName email')
+        .sort({ createdAt: 1 });
+    res.json(messages);
 };
 
-// PUT /api/chat/group/edit/:id
-// Edits group message content
 const editGroupMessage = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const newContent = typeof req.body === 'string' ? req.body : req.body.content;
+    const { id } = req.params;
+    const newContent = typeof req.body === 'string' ? req.body : req.body.content;
 
-        const message = await GroupMessage.findById(id);
-        if (!message) {
-            return res.status(404).json({ success: false, message: 'Message not found' });
-        }
-
-        if (req.user && message.senderId.toString() !== req.user.id) {
-            return res.status(403).json({ success: false, message: 'Not authorized to edit this message' });
-        }
-
-        message.content = newContent;
-        await message.save();
-        res.json(message);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const message = await GroupMessage.findById(id);
+    if (!message) {
+        throw new AppError('Message not found', 404);
     }
+
+    if (req.user && message.senderId.toString() !== req.user.id) {
+        throw new AppError('Not authorized to edit this message', 403);
+    }
+
+    message.content = newContent;
+    await message.save();
+    res.json(message);
 };
 
-// DELETE /api/chat/group/delete/:id
-// Deletes a group message
 const deleteGroupMessage = async (req, res) => {
-    try {
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const message = await GroupMessage.findById(id);
-        if (!message) {
-            return res.status(404).json({ success: false, message: 'Message not found' });
-        }
-
-        if (req.user && message.senderId.toString() !== req.user.id) {
-            return res.status(403).json({ success: false, message: 'Not authorized to delete this message' });
-        }
-
-        await GroupMessage.findByIdAndDelete(id);
-        res.json({ success: true, message: 'Message deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const message = await GroupMessage.findById(id);
+    if (!message) {
+        throw new AppError('Message not found', 404);
     }
+
+    if (req.user && message.senderId.toString() !== req.user.id) {
+        throw new AppError('Not authorized to delete this message', 403);
+    }
+
+    await GroupMessage.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Message deleted successfully' });
 };
 
 module.exports = {

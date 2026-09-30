@@ -63,32 +63,9 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/alumni', alumniRoutes);
 app.use('/api/email', emailRoutes);
 
-app.use((err, req, res, next) => {
-    console.error(err.stack);
+const { notFound, errorHandler } = require('./middleware/error.middleware');
 
-    if (err.name === 'MulterError') {
-        let message = err.message;
-        if (err.code === 'LIMIT_FILE_SIZE') {
-            message = 'File too large. Maximum size allowed is 5MB.';
-        }
-        return res.status(400).json({
-            success: false,
-            message: message
-        });
-    }
-
-    if (err.message && err.message.includes('Only image files are allowed')) {
-        return res.status(400).json({
-            success: false,
-            message: err.message
-        });
-    }
-
-    const statusCode = err.statusCode || 500;
-    res.status(statusCode).json({
-        success: false,
-        message: err.message || 'Internal Server Error',
-    });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
