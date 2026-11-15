@@ -34,7 +34,7 @@ A comprehensive web application designed to connect alumni and students, facilit
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/varshini47/Alumni-back.git
+   git clone https://github.com/lenin-12/Alumni.git
    cd Alumni
    ```
 
