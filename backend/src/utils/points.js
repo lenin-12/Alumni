@@ -1,4 +1,5 @@
 const UserPoints = require('../models/UserPoints');
+const { invalidateLeaderboard, invalidateUserPoints } = require('./cacheInvalidation');
 
 // Award points to user for contributions
 const awardPoints = async (userId, pointsToAward) => {
@@ -10,6 +11,8 @@ const awardPoints = async (userId, pointsToAward) => {
         } else {
             await UserPoints.create({ userId, points: pointsToAward });
         }
+        await invalidateLeaderboard();
+        await invalidateUserPoints(userId);
     } catch (error) {
         console.error("Error awarding points:", error);
     }
@@ -22,6 +25,8 @@ const deductPoints = async (userId, pointsToDeduct) => {
         if (up) {
             up.points = Math.max(0, up.points - pointsToDeduct);
             await up.save();
+            await invalidateLeaderboard();
+            await invalidateUserPoints(userId);
         }
     } catch (error) {
         console.error("Error deducting points:", error);

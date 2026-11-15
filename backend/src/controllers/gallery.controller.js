@@ -1,74 +1,72 @@
 const GalleryItem = require('../models/GalleryItem');
 const cloudinaryUpload = require('../utils/cloudinaryUpload');
+const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+const { getOrSet, getVersion, buildKey } = require('../utils/cache');
+const { invalidateGallery } = require('../utils/cacheInvalidation');
 
-// GET /api/gallery/folders
-// Returns list of unique folder names
+const GALLERY_VER_KEY = 'ver:gallery';
+
 const getFolders = async (req, res) => {
-    try {
-        const folders = await GalleryItem.distinct('folderName');
-        // Map folder names to objects containing id and folderName
-        const folderObjects = folders.map(folder => ({
-            id: folder, // Use folder name as ID to keep it simple and unique
-            folderName: folder
-        }));
-        res.json(folderObjects);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    // Note: If distinct('folderName') is also queried often, we could cache this too, but we'll focus on the images list here.
+    const folders = await GalleryItem.distinct('folderName');
+    const folderObjects = folders.map(folder => ({
+        id: folder,
+        folderName: folder
+    }));
+    res.json(folderObjects);
 };
 
-// GET /api/gallery/folder/:folderName
-// Returns all gallery images inside a specific folder
 const getImagesByFolder = async (req, res) => {
-    try {
-        const { folderName } = req.params;
-        const images = await GalleryItem.find({ folderName })
-            .populate('uploadedBy', 'name lastName email')
-            .sort({ createdAt: -1 });
-        res.json(images);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    const { folderName } = req.params;
+    const { page, limit, skip } = parsePaginationParams(req);
+    const version = await getVersion(GALLERY_VER_KEY);
+    const cacheKey = buildKey('gallery', version, `${folderName}:p${page}:l${limit}`);
+
+    const result = await getOrSet(cacheKey, 300, async () => {
+        const [images, total] = await Promise.all([
+            GalleryItem.find({ folderName })
+                .populate('uploadedBy', 'name lastName email')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            GalleryItem.countDocuments({ folderName })
+        ]);
+        return buildPaginatedResponse(images, page, limit, total);
+    });
+
+    res.json(result);
 };
 
-// POST /api/gallery/upload
-// Adds a new image metadata entry to the database
 const uploadImage = async (req, res) => {
-    try {
-        const { folderName, userId, title, description } = req.body;
-        const finalUserId = req.user ? req.user.id : userId;
+    const { folderName, userId, title, description } = req.body;
+    const finalUserId = req.user ? req.user.id : userId;
 
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: 'Image file is required' });
-        }
-
-        const imageUrl = await cloudinaryUpload(req.file.buffer);
-
-        const galleryItem = await GalleryItem.create({
-            title,
-            description,
-            imageUrl,
-            folderName: folderName || 'General',
-            uploadedBy: finalUserId
-        });
-
-        res.status(201).json(galleryItem);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (!req.file) {
+        throw new AppError('Image file is required', 400);
     }
+
+    const imageUrl = await cloudinaryUpload(req.file.buffer);
+
+    const galleryItem = await GalleryItem.create({
+        title,
+        description,
+        imageUrl,
+        folderName: folderName || 'General',
+        uploadedBy: finalUserId
+    });
+
+    await invalidateGallery();
+    res.status(201).json(galleryItem);
 };
 
-// DELETE /api/gallery/folder/:folderName
-// Deletes a folder and all its images
 const deleteFolder = async (req, res) => {
-    try {
-        const { folderName } = req.params;
+    const { folderName } = req.params;
 
-        await GalleryItem.deleteMany({ folderName });
-        res.json({ success: true, message: `Folder "${folderName}" and all its images deleted successfully` });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    await GalleryItem.deleteMany({ folderName });
+    await invalidateGallery();
+    res.json({ success: true, message: `Folder "${folderName}" and all its images deleted successfully` });
 };
 
 module.exports = {

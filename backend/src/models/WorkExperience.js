@@ -10,4 +10,6 @@ const workExperienceSchema = new mongoose.Schema({
     description: { type: String },
 }, { timestamps: true });
 
+workExperienceSchema.index({ userId: 1 });
+
 module.exports = mongoose.model('WorkExperience', workExperienceSchema);

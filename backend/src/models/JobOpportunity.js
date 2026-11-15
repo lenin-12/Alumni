@@ -27,4 +27,6 @@ jobOpportunitySchema.set('toJSON', {
     }
 });
 
+jobOpportunitySchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('JobOpportunity', jobOpportunitySchema);

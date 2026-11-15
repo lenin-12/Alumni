@@ -5,6 +5,8 @@ import { FaUserShield, FaUserPlus, FaSpinner, FaSearch, FaUser } from "react-ico
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState(null);
@@ -16,7 +18,8 @@ const UserManagement = () => {
         `${import.meta.env.VITE_API_URL}/api/users/admin/allUsers`,
         { withCredentials: true }
       );
-      setUsers(response.data);
+      setUsers(prev => page === 1 ? (response.data.data || []) : [...prev, ...(response.data.data || [])]);
+      setHasNext(response.data.pagination?.hasNext || false);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load users list.");
     } finally {

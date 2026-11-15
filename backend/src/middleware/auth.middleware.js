@@ -1,5 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { getOrSet, entityKey } = require('../utils/cache');
+
+
+const withId = (user) => ({ ...user, id: String(user._id) });
 
 const protect = async (req, res, next) => {
     let token;
@@ -14,15 +18,19 @@ const protect = async (req, res, next) => {
 
     try{
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-        const user = await User.findById(decoded.id).select('-password');
-        // ikkada password ni fetch chesey vidhanam change cheyyi next time chusinapudu 
+
+        // Cache user lookup for 60s — stored without password (select: -password default)
+        const user = await getOrSet(
+            entityKey('user', decoded.id),
+            60,
+            () => User.findById(decoded.id).select('-password').lean()
+        );
 
         if(!user){
-            // Token is valid but the account behind it no longer exists
             return res.status(401).json({ success: false, message: 'User no longer exists' });
         }
 
-        req.user = user;
+        req.user = withId(user);
         next();
     }catch(error){
         if(error.name === 'TokenExpiredError'){
@@ -45,14 +53,17 @@ const optionalProtect = async (req, res, next) => {
 
     try{
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-        const user = await User.findById(decoded.id).select('-password');
+        const user = await getOrSet(
+            entityKey('user', decoded.id),
+            60,
+            () => User.findById(decoded.id).select('-password').lean()
+        );
 
         if(user){
-            req.user = user;
+            req.user = withId(user);
         }
         next();
     }catch(error){
-        // Proceed even if token is invalid or expired
         next();
     }
 };

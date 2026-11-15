@@ -1,74 +1,90 @@
 const User = require('../models/User');
 const UserPoints = require('../models/UserPoints');
 const cloudinaryUpload = require('../utils/cloudinaryUpload');
+const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+const { getOrSet, getVersion, buildKey, entityKey } = require('../utils/cache');
+const { invalidateUser, invalidateAlumniList } = require('../utils/cacheInvalidation');
 
-// Get all users/alumni
+// Version key names — shared with cacheInvalidation.js
+const LEADERBOARD_VER_KEY = 'ver:leaderboard';
+const ALUMNI_LIST_VER_KEY  = 'ver:alumni_list';
+
 const getUsers = async (req, res) => {
-    try {
-        // Only fetch users with role 'ALUMNI'
-        let query = { role: 'ALUMNI' };
-        
-        // Exclude the logged-in user themselves
-        if (req.user) {
-            query._id = { $ne: req.user.id };
-        }
-        
-        const users = await User.find(query).select('-password');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    let baseQuery = { role: 'ALUMNI' };
+    const { page, limit, skip } = parsePaginationParams(req);
+
+    // Cache the full alumni list keyed by version+page+limit.
+    // We purposely do NOT key by req.user.id — instead we cache the full set
+    // and exclude the requesting user in-memory after retrieval.
+    const version = await getVersion(ALUMNI_LIST_VER_KEY);
+    const cacheKey = buildKey('alumni', version, `p${page}:l${limit}`);
+
+    const result = await getOrSet(cacheKey, 120, async () => {
+        const [users, total] = await Promise.all([
+            User.find(baseQuery).select('-password').skip(skip).limit(limit).lean(),
+            User.countDocuments(baseQuery)
+        ]);
+        return buildPaginatedResponse(users, page, limit, total);
+    });
+
+    // Remove requesting user from the cached data in-memory (so key stays per-page, not per-user)
+    if (req.user) {
+        const reqUserId = req.user._id?.toString() || req.user.id?.toString();
+        result.data = result.data.filter(u => u._id?.toString() !== reqUserId);
     }
+
+    res.json(result);
 };
 
-// Get single user by ID
 const getUserById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id).select('-password');
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const user = await User.findById(req.params.id).select('-password').lean();
+    if (!user) {
+        throw new AppError('User not found', 404);
     }
+    res.json(user);
 };
 
-// Update user profile details
 const updateProfile = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updates = { ...req.body };
-        
-        // Remove critical fields from request body to prevent unauthorized modification
-        delete updates.password;
-        delete updates.role;
-        delete updates.email;
-        delete updates.id;
-        delete updates._id;
+    const { id } = req.params;
+    const updates = { ...req.body };
 
-        if (req.file) {
-            updates.imageUrl = await cloudinaryUpload(req.file.buffer);
-        }
+    delete updates.password;
+    delete updates.role;
+    delete updates.email;
+    delete updates.id;
+    delete updates._id;
 
-        const user = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    if (req.file) {
+        updates.imageUrl = await cloudinaryUpload(req.file.buffer);
     }
+
+    const user = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
+    if (!user) {
+        throw new AppError('User not found', 404);
+    }
+
+    await invalidateUser(id);
+    await invalidateAlumniList();
+
+    res.json(user);
 };
 
-// Get Leaderboard rankings
 const getLeaderboard = async (req, res) => {
-    try {
-        // Query points and populate user info
-        const userPoints = await UserPoints.find().populate('userId');
-        
-        // Map user info to response structure expected by frontend
-        let leaderboardData = userPoints.map(up => {
+    const { limit = 50 } = req.query;
+    const topLimit = parseInt(limit, 10) || 50;
+
+    const version = await getVersion(LEADERBOARD_VER_KEY);
+    const cacheKey = buildKey('leaderboard', version, `n${topLimit}`);
+
+    const leaderboardData = await getOrSet(cacheKey, 60, async () => {
+        const userPoints = await UserPoints.find()
+            .sort({ points: -1 })
+            .limit(topLimit)
+            .populate('userId', 'name lastName email batch department imageUrl role')
+            .lean();
+
+        let data = userPoints.map(up => {
             if (!up.userId) return null;
             return {
                 id: up.userId._id,
@@ -81,11 +97,10 @@ const getLeaderboard = async (req, res) => {
                 points: up.points
             };
         }).filter(item => item !== null);
-        
-        // If there are no rankings yet, query users and build a default 0-point ranking
-        if (leaderboardData.length === 0) {
-            const alumni = await User.find({ role: 'ALUMNI' });
-            leaderboardData = alumni.map(user => ({
+
+        if (data.length === 0) {
+            const alumni = await User.find({ role: 'ALUMNI' }).limit(topLimit).lean();
+            data = alumni.map(user => ({
                 id: user._id,
                 name: user.name + (user.lastName ? ' ' + user.lastName : ''),
                 email: user.email,
@@ -96,138 +111,135 @@ const getLeaderboard = async (req, res) => {
                 points: 0
             }));
         }
-        
-        // Sort descending by points
-        leaderboardData.sort((a, b) => b.points - a.points);
-        
-        res.json(leaderboardData);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+
+        return data;
+    });
+
+    res.json({ data: leaderboardData });
 };
 
-// Search users by name, batch, company or general query
 const searchUsers = async (req, res) => {
-    try {
-        const { type, query } = req.query;
-        if (!query) {
-            return res.json([]);
-        }
-        
-        const regex = new RegExp(query, 'i');
-        let searchCriteria = {};
-        
-        if (type === 'name') {
-            searchCriteria = { $or: [{ name: regex }, { lastName: regex }] };
-        } else if (type === 'batch') {
-            const batchNum = parseInt(query);
-            if (!isNaN(batchNum)) {
-                searchCriteria = { batch: batchNum };
-            } else {
-                return res.json([]);
-            }
-        } else if (type === 'company') {
-            searchCriteria = { company: regex };
+    const { type, query } = req.query;
+    const { page, limit, skip } = parsePaginationParams(req);
+
+    if (!query) {
+        return res.json(buildPaginatedResponse([], page, limit, 0));
+    }
+
+    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedQuery = escapeRegExp(query);
+    const regex = new RegExp(escapedQuery, 'i');
+    let searchCriteria = {};
+
+    if (type === 'name') {
+        searchCriteria = { $or: [{ name: regex }, { lastName: regex }] };
+    } else if (type === 'batch') {
+        const batchNum = parseInt(query);
+        if (!isNaN(batchNum)) {
+            searchCriteria = { batch: batchNum };
         } else {
-            // General text match
-            searchCriteria = {
-                $or: [
-                    { name: regex },
-                    { lastName: regex },
-                    { email: regex },
-                    { department: regex },
-                    { company: regex }
-                ]
-            };
+            return res.json(buildPaginatedResponse([], page, limit, 0));
         }
-        
-        // Only allow searching for ALUMNI users
-        let roleCriteria = { role: 'ALUMNI' };
-        
-        // Exclude the logged-in user themselves
-        let idCriteria = {};
-        if (req.user) {
-            idCriteria = { _id: { $ne: req.user.id } };
-        }
-        
-        const finalCriteria = {
-            $and: [
-                searchCriteria,
-                roleCriteria,
-                idCriteria
+    } else if (type === 'company') {
+        searchCriteria = { company: regex };
+    } else {
+        searchCriteria = {
+            $or: [
+                { name: regex },
+                { lastName: regex },
+                { email: regex },
+                { department: regex },
+                { company: regex }
             ]
         };
-        
-        const users = await User.find(finalCriteria).select('-password');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
     }
+
+    // Cache search results keyed by version + normalized query params.
+    // Exclude requesting user in-memory after retrieval (same pattern as getUsers).
+    const version = await getVersion(ALUMNI_LIST_VER_KEY);
+    const normalizedType = type || 'all';
+    const normalizedQuery = escapedQuery.toLowerCase();
+    const cacheKey = buildKey('search', version, `t${normalizedType}:q${normalizedQuery}:p${page}:l${limit}`);
+
+    const result = await getOrSet(cacheKey, 120, async () => {
+        const roleCriteria = { role: 'ALUMNI' };
+        const finalCriteria = { $and: [searchCriteria, roleCriteria] };
+
+        const [users, total] = await Promise.all([
+            User.find(finalCriteria).select('-password').skip(skip).limit(limit).lean(),
+            User.countDocuments(finalCriteria)
+        ]);
+        return buildPaginatedResponse(users, page, limit, total);
+    });
+
+    // Remove the requesting user in-memory
+    if (req.user) {
+        const reqUserId = req.user._id?.toString() || req.user.id?.toString();
+        result.data = result.data.filter(u => u._id?.toString() !== reqUserId);
+    }
+
+    res.json(result);
 };
 
-// Get all users (including admins) for Admin Management page
 const getAllUsersForAdmin = async (req, res) => {
-    try {
-        const users = await User.find().select('-password').sort({ name: 1 });
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    const { page, limit, skip } = parsePaginationParams(req);
+    const [users, total] = await Promise.all([
+        User.find().select('-password').sort({ name: 1 }).skip(skip).limit(limit).lean(),
+        User.countDocuments()
+    ]);
+    res.json(buildPaginatedResponse(users, page, limit, total));
 };
 
-// Promote a user to ADMIN
 const promoteToAdmin = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const user = await User.findById(id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        
-        user.role = 'ADMIN';
-        await user.save();
-        
-        res.json({ success: true, message: `User ${user.name} promoted to ADMIN successfully`, user });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+        throw new AppError('User not found', 404);
     }
+
+    user.role = 'ADMIN';
+    await user.save();
+
+    await invalidateUser(id);
+    await invalidateAlumniList();
+
+    res.json({ success: true, message: `User ${user.name} promoted to ADMIN successfully`, user });
 };
-// Demote an ADMIN to ALUMNI
+
 const demoteFromAdmin = async (req, res) => {
-    try {
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const user = await User.findById(id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-
-        // Validate that the system has at least one remaining ADMIN before demoting
-        if (user.role === 'ADMIN') {
-            const adminCount = await User.countDocuments({ role: 'ADMIN' });
-            if (adminCount <= 1) {
-                return res.status(400).json({ success: false, message: 'Cannot demote the last remaining ADMIN user.' });
-            }
-        }
-
-        user.role = 'ALUMNI'; // demote to ALUMNI
-        await user.save();
-
-        res.json({ success: true, message: `User ${user.name} demoted to ALUMNI successfully`, user });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const user = await User.findById(id);
+    if (!user) {
+        throw new AppError('User not found', 404);
     }
+
+    if (user.role === 'ADMIN') {
+        const adminCount = await User.countDocuments({ role: 'ADMIN' });
+        if (adminCount <= 1) {
+            throw new AppError('Cannot demote the last remaining ADMIN user.', 400);
+        }
+    }
+
+    user.role = 'ALUMNI';
+    await user.save();
+
+    await invalidateUser(id);
+    await invalidateAlumniList();
+
+    res.json({ success: true, message: `User ${user.name} demoted to ALUMNI successfully`, user });
 };
 
-// Get points of a user
 const getUserPoints = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userPoints = await UserPoints.findOne({ userId: id });
-        res.json({ points: userPoints ? userPoints.points : 0 });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    const { id } = req.params;
+    const cacheKey = entityKey('points', id);
+
+    const points = await getOrSet(cacheKey, 60, async () => {
+        const up = await UserPoints.findOne({ userId: id }).lean();
+        return up ? up.points : 0;
+    });
+
+    res.json({ points });
 };
 
 module.exports = {

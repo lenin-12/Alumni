@@ -4,7 +4,10 @@ const { submitMessage, getMessages, resolveMessage, deleteMessage } = require('.
 const { protect, authorize } = require('../middleware/auth.middleware');
 
 // Public route to submit a contact message
-router.post('/submit', submitMessage);
+const validate = require('../middleware/validate');
+const { contactSubmitSchema } = require('../schemas/validation.schemas');
+
+router.post('/submit', validate(contactSubmitSchema), submitMessage);
 
 // Admin-only routes to manage submissions
 // We accept both 'admin' and 'ADMIN' due to frontend role checks case-insensitivity

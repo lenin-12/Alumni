@@ -23,4 +23,7 @@ achievementSchema.set('toJSON', {
     }
 });
 
+achievementSchema.index({ userId: 1, dateOfAchievement: -1 });
+achievementSchema.index({ dateOfAchievement: -1 });
+
 module.exports = mongoose.model('Achievement', achievementSchema);

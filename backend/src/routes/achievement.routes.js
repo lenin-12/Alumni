@@ -10,9 +10,11 @@ const {
 } = require('../controllers/achievement.controller');
 const { protect } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload');
+const validate = require('../middleware/validate');
+const { achievementCreateSchema } = require('../schemas/validation.schemas');
 
 router.get('/all', protect, getAchievements);
-router.post('/', protect, upload.single('image'), createAchievement);
+router.post('/', protect, upload.single('image'), validate(achievementCreateSchema), createAchievement);
 router.get('/user/:alumniId', protect, getAchievementsByAlumni);
 router.get('/:id', protect, getAchievementById);
 router.put('/:id', protect, upload.single('image'), updateAchievement);

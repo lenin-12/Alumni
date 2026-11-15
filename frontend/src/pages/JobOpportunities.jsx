@@ -13,6 +13,9 @@ import { motion, AnimatePresence } from "framer-motion";
 
 function JobOpportunities() {
   const [jobs, setJobs] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,10 +65,11 @@ function JobOpportunities() {
 
   const fetchJobs = async () => {
     try {
-      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/jobs`, { withCredentials: true });
-      const jobOpportunitiesArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
-      setJobs(jobOpportunitiesArray);
-      setFilteredJobs(jobOpportunitiesArray);
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/jobs?page=${page}`, { withCredentials: true });
+      const jobOpportunitiesArray = response.data.data || [];
+      setHasNext(response.data.pagination?.hasNext || false);
+      setJobs(prev => page === 1 ? jobOpportunitiesArray : [...prev, ...jobOpportunitiesArray]);
+      setFilteredJobs(prev => page === 1 ? jobOpportunitiesArray : [...prev, ...jobOpportunitiesArray]);
     } catch (error) {
       console.error("Error fetching job opportunities", error);
       toast.error("Failed to load job opportunities");

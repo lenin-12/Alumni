@@ -20,4 +20,6 @@ chatGroupSchema.set('toJSON', {
     }
 });
 
+chatGroupSchema.index({ members: 1 });
+
 module.exports = mongoose.model('ChatGroup', chatGroupSchema);

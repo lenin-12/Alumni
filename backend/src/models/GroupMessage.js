@@ -19,4 +19,6 @@ groupMessageSchema.set('toJSON', {
     }
 });
 
+groupMessageSchema.index({ groupId: 1, createdAt: 1 });
+groupMessageSchema.index({ groupId: 1, _id: -1 });
 module.exports = mongoose.model('GroupMessage', groupMessageSchema);

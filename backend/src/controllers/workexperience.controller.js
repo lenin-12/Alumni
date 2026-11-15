@@ -1,6 +1,7 @@
 const WorkExperience = require('../models/WorkExperience');
 const { awardPoints, deductPoints } = require('../utils/points');
-
+const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
 
 const mapWorkExperienceResponse = (exp) => {
     if (!exp) return null;
@@ -21,143 +22,121 @@ const mapWorkExperienceResponse = (exp) => {
     };
 };
 
-
 const getWorkExperiences = async (req, res) => {
-    try {
-        const workExps = await WorkExperience.find()
+    const { page, limit, skip } = parsePaginationParams(req);
+    const [workExps, total] = await Promise.all([
+        WorkExperience.find()
             .populate('userId', 'name lastName email imageUrl')
-            .sort({ startDate: -1 });
-        
-        const mapped = workExps.map(mapWorkExperienceResponse).filter(Boolean);
-        res.json(mapped);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+            .sort({ startDate: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        WorkExperience.countDocuments()
+    ]);
 
+    const mapped = workExps.map(mapWorkExperienceResponse).filter(Boolean);
+    res.json(buildPaginatedResponse(mapped, page, limit, total));
+};
 
 const getWorkExperienceById = async (req, res) => {
-    try {
-        const exp = await WorkExperience.findById(req.params.id);
-        if (!exp) {
-            return res.status(404).json({ success: false, message: 'Work experience not found' });
-        }
-        res.json(mapWorkExperienceResponse(exp));
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const exp = await WorkExperience.findById(req.params.id);
+    if (!exp) {
+        throw new AppError('Work experience not found', 404);
     }
+    res.json(mapWorkExperienceResponse(exp));
 };
 
-// Get work experiences for a specific alumnus
 const getWorkExperiencesByAlumni = async (req, res) => {
-    try {
-        const { alumniId } = req.params;
-        const workExps = await WorkExperience.find({ userId: alumniId }).sort({ startDate: -1 });
-        
-        // Map elements, populate user is not needed if the page already knows the user,
-        // but we add a stub for safety
-        const mapped = workExps.map(exp => ({
-            id: exp._id,
-            company: exp.company,
-            role: exp.role,
-            startDate: exp.startDate,
-            endDate: exp.endDate,
-            isCurrent: exp.isCurrent,
-            description: exp.description
-        }));
-        
-        res.json(mapped);
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+    const { alumniId } = req.params;
+    const workExps = await WorkExperience.find({ userId: alumniId }).sort({ startDate: -1 });
+
+    const mapped = workExps.map(exp => ({
+        id: exp._id,
+        company: exp.company,
+        role: exp.role,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        isCurrent: exp.isCurrent,
+        description: exp.description
+    }));
+
+    res.json(mapped);
 };
 
-// Create new work experience entry
 const createWorkExperience = async (req, res) => {
+    const { company, role, startDate, endDate, isPresent, isCurrent, description, user } = req.body;
+
+    const finalUserId = req.user ? req.user.id : (user ? user.id : undefined);
+
+    if (!finalUserId) {
+        throw new AppError('User ID is required', 400);
+    }
+
+    const isCurrentJob = isPresent || isCurrent || (endDate == null);
+
+    const exp = await WorkExperience.create({
+        company,
+        role,
+        startDate: new Date(startDate),
+        endDate: isCurrentJob ? null : new Date(endDate),
+        isCurrent: isCurrentJob,
+        description,
+        userId: finalUserId
+    });
+
     try {
-        const { company, role, startDate, endDate, isPresent, isCurrent, description, user } = req.body;
-        
-        // Handle nested user ID payload from frontend
-        const finalUserId = req.user ? req.user.id : (user ? user.id : undefined);
-
-        if (!finalUserId) {
-            return res.status(400).json({ success: false, message: 'User ID is required' });
-        }
-
-        const isCurrentJob = isPresent || isCurrent || (endDate == null);
-
-        const exp = await WorkExperience.create({
-            company,
-            role,
-            startDate: new Date(startDate),
-            endDate: isCurrentJob ? null : new Date(endDate),
-            isCurrent: isCurrentJob,
-            description,
-            userId: finalUserId
-        });
-
-        // Award 30 points to the user for contributing their work history
         await awardPoints(finalUserId, 30);
-
-        res.status(201).json(mapWorkExperienceResponse(exp));
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    } catch (pointsError) {
+        console.error('Failed to award points after work experience create:', pointsError);
     }
+
+    res.status(201).json(mapWorkExperienceResponse(exp));
 };
 
-// Update work experience entry
 const updateWorkExperience = async (req, res) => {
-    try {
-        const { company, role, startDate, endDate, isPresent, isCurrent, description } = req.body;
+    const { company, role, startDate, endDate, isPresent, isCurrent, description } = req.body;
 
-        const exp = await WorkExperience.findById(req.params.id);
-        if (!exp) {
-            return res.status(404).json({ success: false, message: 'Work experience not found' });
-        }
-
-        // Access check
-        if (req.user && req.user.role !== 'ADMIN' && exp.userId.toString() !== req.user.id) {
-            return res.status(403).json({ success: false, message: 'Not authorized' });
-        }
-
-        const isCurrentJob = isPresent || isCurrent || (endDate == null);
-
-        exp.company = company || exp.company;
-        exp.role = role || exp.role;
-        exp.startDate = startDate ? new Date(startDate) : exp.startDate;
-        exp.endDate = isCurrentJob ? null : (endDate ? new Date(endDate) : exp.endDate);
-        exp.isCurrent = isCurrentJob;
-        exp.description = description || exp.description;
-
-        await exp.save();
-        res.json(mapWorkExperienceResponse(exp));
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const exp = await WorkExperience.findById(req.params.id);
+    if (!exp) {
+        throw new AppError('Work experience not found', 404);
     }
+
+    if (req.user && req.user.role !== 'ADMIN' && exp.userId.toString() !== req.user.id) {
+        throw new AppError('Not authorized', 403);
+    }
+
+    const isCurrentJob = isPresent || isCurrent || (endDate == null);
+
+    exp.company = company || exp.company;
+    exp.role = role || exp.role;
+    exp.startDate = startDate ? new Date(startDate) : exp.startDate;
+    exp.endDate = isCurrentJob ? null : (endDate ? new Date(endDate) : exp.endDate);
+    exp.isCurrent = isCurrentJob;
+    exp.description = description || exp.description;
+
+    await exp.save();
+    res.json(mapWorkExperienceResponse(exp));
 };
 
-// Delete work experience entry
 const deleteWorkExperience = async (req, res) => {
-    try {
-        const exp = await WorkExperience.findById(req.params.id);
-        if (!exp) {
-            return res.status(404).json({ success: false, message: 'Work experience not found' });
-        }
-
-        // Access check
-        if (req.user && req.user.role !== 'ADMIN' && exp.userId.toString() !== req.user.id) {
-            return res.status(403).json({ success: false, message: 'Not authorized' });
-        }
-
-        await WorkExperience.findByIdAndDelete(req.params.id);
-
-        // Deduct 30 points on removal
-        await deductPoints(exp.userId, 30);
-
-        res.json({ success: true, message: 'Work experience deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    const exp = await WorkExperience.findById(req.params.id);
+    if (!exp) {
+        throw new AppError('Work experience not found', 404);
     }
+
+    if (req.user && req.user.role !== 'ADMIN' && exp.userId.toString() !== req.user.id) {
+        throw new AppError('Not authorized', 403);
+    }
+
+    await WorkExperience.findByIdAndDelete(req.params.id);
+
+    try {
+        await deductPoints(exp.userId, 30);
+    } catch (pointsError) {
+        console.error('Failed to deduct points after work experience delete:', pointsError);
+    }
+
+    res.json({ success: true, message: 'Work experience deleted successfully' });
 };
 
 module.exports = {

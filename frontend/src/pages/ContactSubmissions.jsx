@@ -41,7 +41,7 @@ function ContactSubmissions() {
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/contact/all`, {withCredentials:true});
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/contact/all?page=${page}`, {withCredentials:true});
       setSubmissions(response.data);
     } catch (error) {
       console.error("Error fetching contact submissions:", error);
