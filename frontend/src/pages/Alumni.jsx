@@ -31,7 +31,7 @@ const AlumniList = () => {
   const fetchAlumni = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users`, { withCredentials: true });
+      const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/users?page=${page}`, { withCredentials: true });
       const alumniData = response.data;
       setAlumni(alumniData);
       setFilteredAlumni(alumniData);

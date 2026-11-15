@@ -9,7 +9,8 @@ const registerSchema = z.object({
     lastName: z.string().trim().min(1, 'Last name is required'),
     email: z.string().trim().email('Valid email is required'),
     password: z.string().min(1, 'Password is required'),
-    role: z.enum(['ALUMNI', 'STUDENT', 'ADMIN']).optional(),
+    
+    role: z.enum(['ALUMNI', 'STUDENT']).optional(),
     profileType: z.enum(['PUBLIC', 'PRIVATE']).optional(),
     phone: optionalString,
     batch: z.preprocess(

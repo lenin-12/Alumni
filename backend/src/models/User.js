@@ -35,4 +35,7 @@ userSchema.set('toJSON', {
     }
 });
 
+userSchema.index({ role: 1, batch: 1 });
+userSchema.index({ role: 1, company: 1 });
+
 module.exports = mongoose.model('User', userSchema);

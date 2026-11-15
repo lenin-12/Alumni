@@ -19,4 +19,9 @@ chatMessageSchema.set('toJSON', {
     }
 });
 
+chatMessageSchema.index({ senderId: 1, receiverId: 1, createdAt: 1 });
+chatMessageSchema.index({ receiverId: 1, senderId: 1, createdAt: 1 });
+chatMessageSchema.index({senderId: 1,receiverId: 1,_id: -1});
+chatMessageSchema.index({receiverId: 1,senderId: 1,_id: -1});
+
 module.exports = mongoose.model('ChatMessage', chatMessageSchema);

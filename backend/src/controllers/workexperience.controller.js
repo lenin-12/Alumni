@@ -1,6 +1,7 @@
 const WorkExperience = require('../models/WorkExperience');
 const { awardPoints, deductPoints } = require('../utils/points');
 const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
 
 const mapWorkExperienceResponse = (exp) => {
     if (!exp) return null;
@@ -22,12 +23,19 @@ const mapWorkExperienceResponse = (exp) => {
 };
 
 const getWorkExperiences = async (req, res) => {
-    const workExps = await WorkExperience.find()
-        .populate('userId', 'name lastName email imageUrl')
-        .sort({ startDate: -1 });
+    const { page, limit, skip } = parsePaginationParams(req);
+    const [workExps, total] = await Promise.all([
+        WorkExperience.find()
+            .populate('userId', 'name lastName email imageUrl')
+            .sort({ startDate: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        WorkExperience.countDocuments()
+    ]);
 
     const mapped = workExps.map(mapWorkExperienceResponse).filter(Boolean);
-    res.json(mapped);
+    res.json(buildPaginatedResponse(mapped, page, limit, total));
 };
 
 const getWorkExperienceById = async (req, res) => {

@@ -4,6 +4,8 @@ const GroupMessage = require('../models/GroupMessage');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 
+const mongoose = require('mongoose');
+
 const getRecentContacts = async (req, res) => {
     const { userId } = req.params;
 
@@ -11,41 +13,86 @@ const getRecentContacts = async (req, res) => {
         throw new AppError('Not authorized to view these contacts', 403);
     }
 
-    const messages = await ChatMessage.find({
-        $or: [{ senderId: userId }, { receiverId: userId }]
-    }).sort({ createdAt: -1 });
+    const objectId = new mongoose.Types.ObjectId(userId);
 
-    const contactIds = new Set();
-    messages.forEach(msg => {
-        if (msg.senderId.toString() !== userId) {
-            contactIds.add(msg.senderId.toString());
+    const recentContacts = await ChatMessage.aggregate([
+        {
+            $match: {
+                $or: [{ senderId: objectId }, { receiverId: objectId }]
+            }
+        },
+        { $sort: { createdAt: -1 } },
+        {
+            $group: {
+                _id: {
+                    $cond: [
+                        { $eq: ["$senderId", objectId] },
+                        "$receiverId",
+                        "$senderId"
+                    ]
+                },
+                latestMessageCreatedAt: { $first: "$createdAt" }
+            }
+        },
+        { $sort: { latestMessageCreatedAt: -1 } },
+        { $limit: 50 },
+        {
+            $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'contact'
+            }
+        },
+        { $unwind: "$contact" },
+        {
+            $project: {
+                _id: "$contact._id",
+                name: "$contact.name",
+                lastName: "$contact.lastName",
+                email: "$contact.email",
+                imageUrl: "$contact.imageUrl",
+                role: "$contact.role",
+                batch: "$contact.batch",
+                department: "$contact.department"
+            }
         }
-        if (msg.receiverId.toString() !== userId) {
-            contactIds.add(msg.receiverId.toString());
-        }
-    });
+    ]);
 
-    const contacts = await User.find({ _id: { $in: Array.from(contactIds) } })
-        .select('name lastName email imageUrl role batch department');
-
-    res.json(contacts);
+    res.json(recentContacts);
 };
 
 const getChatHistory = async (req, res) => {
     const { userId, receiverId } = req.params;
+    const { limit = 30, before } = req.query;
 
     if (req.user.id !== userId && req.user.id !== receiverId) {
         throw new AppError('Not authorized to view this conversation', 403);
     }
 
-    const messages = await ChatMessage.find({
+    const query = {
         $or: [
             { senderId: userId, receiverId: receiverId },
             { senderId: receiverId, receiverId: userId }
         ]
-    }).sort({ createdAt: 1 });
+    };
 
-    res.json(messages);
+    if (before) {
+        query._id = { $lt: before };
+    }
+
+    const parsedLimit = parseInt(limit, 10);
+
+    const messages = await ChatMessage.find(query)
+        .sort({ _id: -1 })
+        .limit(parsedLimit)
+        .lean();
+
+    messages.reverse();
+
+    const nextCursor = messages.length > 0 ? messages[0]._id : null;
+
+    res.json({ data: messages, nextCursor });
 };
 
 const editChatMessage = async (req, res) => {
@@ -88,7 +135,9 @@ const searchChatUsers = async (req, res) => {
         return res.json([]);
     }
 
-    const regex = new RegExp(query, 'i');
+    const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedQuery = escapeRegExp(query);
+    const regex = new RegExp(escapedQuery, 'i');
 
     let roleCriteria = { role: { $ne: 'ADMIN' } };
     if (req.user && req.user.role === 'ALUMNI') {
@@ -190,10 +239,26 @@ const getGroupMembers = async (req, res) => {
 
 const getGroupMessages = async (req, res) => {
     const { groupId } = req.params;
-    const messages = await GroupMessage.find({ groupId })
+    const { limit = 30, before } = req.query;
+
+    const query = { groupId };
+    if (before) {
+        query._id = { $lt: before };
+    }
+
+    const parsedLimit = parseInt(limit, 10);
+
+    const messages = await GroupMessage.find(query)
         .populate('senderId', 'name lastName email')
-        .sort({ createdAt: 1 });
-    res.json(messages);
+        .sort({ _id: -1 })
+        .limit(parsedLimit)
+        .lean();
+
+    messages.reverse();
+
+    const nextCursor = messages.length > 0 ? messages[0]._id : null;
+
+    res.json({ data: messages, nextCursor });
 };
 
 const editGroupMessage = async (req, res) => {

@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 
 const AchievementsList = () => {
   const [achievements, setAchievements] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 

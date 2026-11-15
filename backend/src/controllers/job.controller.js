@@ -1,11 +1,30 @@
 const JobOpportunity = require('../models/JobOpportunity');
 const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+const { getOrSet, getVersion, buildKey } = require('../utils/cache');
+const { invalidateJobs } = require('../utils/cacheInvalidation');
+
+const JOBS_VER_KEY = 'ver:jobs';
 
 const getJobs = async (req, res) => {
-    const jobs = await JobOpportunity.find()
-        .populate('postedBy', 'name lastName email imageUrl department')
-        .sort({ createdAt: -1 });
-    res.json(jobs);
+    const { page, limit, skip } = parsePaginationParams(req);
+    const version = await getVersion(JOBS_VER_KEY);
+    const cacheKey = buildKey('jobs', version, `p${page}:l${limit}`);
+
+    const result = await getOrSet(cacheKey, 120, async () => {
+        const [jobs, total] = await Promise.all([
+            JobOpportunity.find()
+                .populate('postedBy', 'name lastName email imageUrl department')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            JobOpportunity.countDocuments()
+        ]);
+        return buildPaginatedResponse(jobs, page, limit, total);
+    });
+
+    res.json(result);
 };
 
 const createJob = async (req, res) => {
@@ -35,6 +54,7 @@ const createJob = async (req, res) => {
         postedBy: postedById
     });
 
+    await invalidateJobs();
     res.status(201).json(job);
 };
 
@@ -49,6 +69,7 @@ const deleteJob = async (req, res) => {
     }
 
     await JobOpportunity.findByIdAndDelete(req.params.id);
+    await invalidateJobs();
     res.json({ success: true, message: 'Job deleted successfully' });
 };
 

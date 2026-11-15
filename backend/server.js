@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 
 const app = require("./src/app");
 const initSocket = require("./src/config/socket");
+const { closeRedis } = require("./src/config/redis");
 
 dotenv.config();
 
@@ -16,6 +17,10 @@ const server = http.createServer(app);
 const io = initSocket(server);
 
 app.set("io", io);
+
+if (process.env.NODE_ENV === 'production') {
+    mongoose.set('autoIndex', false);
+}
 
 mongoose
     .connect(MONGO_URI)
@@ -35,6 +40,19 @@ mongoose
         process.exit(1);
     });
 
+
+const gracefulShutdown = async (signal) => {
+    console.log(`[${signal}] Shutting down gracefully...`);
+    server.close(async () => {
+        await closeRedis();
+        await mongoose.connection.close();
+        console.log('Server, Redis and MongoDB connections closed.');
+        process.exit(0);
+    });
+};
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT",  () => gracefulShutdown("SIGINT"));
 
 process.on("unhandledRejection", (err) => {
     console.error("Unhandled Promise Rejection:", err);

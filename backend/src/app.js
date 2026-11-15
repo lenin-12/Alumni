@@ -46,6 +46,7 @@ const workExperienceRoutes = require('./routes/workexperience.routes');
 const achievementRoutes = require('./routes/achievement.routes');
 const alumniRoutes = require('./routes/alumni.routes');
 const emailRoutes = require('./routes/email.routes');
+const healthRoutes = require('./routes/health.routes');
 
 
 app.use('/api/auth', authRoutes);
@@ -62,6 +63,7 @@ app.use('/api/work-experience', workExperienceRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/alumni', alumniRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/health', healthRoutes);
 
 const { notFound, errorHandler } = require('./middleware/error.middleware');
 

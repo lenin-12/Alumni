@@ -2,15 +2,31 @@ const Achievement = require('../models/Achievement');
 const { awardPoints, deductPoints } = require('../utils/points');
 const cloudinaryUpload = require('../utils/cloudinaryUpload');
 const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+const { getOrSet, getVersion, buildKey } = require('../utils/cache');
+const { invalidateAchievements } = require('../utils/cacheInvalidation');
+
+const ACHIEVEMENTS_VER_KEY = 'ver:achievements';
 
 const getAchievements = async (req, res) => {
-    const achievements = await Achievement.find()
-        .populate('userId', 'name lastName email imageUrl department')
-        .sort({ dateOfAchievement: -1 });
+    const { page, limit, skip } = parsePaginationParams(req);
+    const version = await getVersion(ACHIEVEMENTS_VER_KEY);
+    const cacheKey = buildKey('achievements', version, `p${page}:l${limit}`);
 
-    const validAchievements = achievements.filter(ach => ach.userId && typeof ach.userId === 'object' && ach.userId.name);
+    const result = await getOrSet(cacheKey, 120, async () => {
+        const [achievements, total] = await Promise.all([
+            Achievement.find()
+                .populate('userId', 'name lastName email imageUrl department')
+                .sort({ dateOfAchievement: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Achievement.countDocuments()
+        ]);
+        return buildPaginatedResponse(achievements, page, limit, total);
+    });
 
-    res.json(validAchievements);
+    res.json(result);
 };
 
 const getAchievementById = async (req, res) => {
@@ -56,6 +72,7 @@ const createAchievement = async (req, res) => {
         console.error('Failed to award points after achievement create:', pointsError);
     }
 
+    await invalidateAchievements();
     res.status(201).json(achievement);
 };
 
@@ -84,6 +101,7 @@ const updateAchievement = async (req, res) => {
     }
 
     await achievement.save();
+    await invalidateAchievements();
     res.json(achievement);
 };
 
@@ -105,6 +123,7 @@ const deleteAchievement = async (req, res) => {
         console.error('Failed to deduct points after achievement delete:', pointsError);
     }
 
+    await invalidateAchievements();
     res.json({ success: true, message: 'Achievement deleted successfully' });
 };
 

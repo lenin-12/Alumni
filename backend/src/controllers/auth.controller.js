@@ -8,6 +8,7 @@ const {
     refreshCookieOptions,
 } = require('../utils/generateTokens');
 const AppError = require('../utils/AppError');
+const { invalidateAlumniList } = require('../utils/cacheInvalidation');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -61,6 +62,8 @@ const registerUser = async (req, res) => {
 
     user.refreshToken = refreshToken;
     await user.save();
+
+    await invalidateAlumniList();
 
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
 

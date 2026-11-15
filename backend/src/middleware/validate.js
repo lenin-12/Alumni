@@ -11,10 +11,7 @@ const formatZodErrors = (zodError) => {
     return errors;
 };
 
-/**
- * @param {import('zod').ZodTypeAny} schema
- * @param {'body' | 'query' | 'params'} source
- */
+
 const validate = (schema, source = 'body') => (req, res, next) => {
     const result = schema.safeParse(req[source]);
     if (!result.success) {

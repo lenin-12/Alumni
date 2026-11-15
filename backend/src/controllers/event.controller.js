@@ -1,11 +1,30 @@
 const Event = require('../models/Event');
 const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+const { getOrSet, getVersion, buildKey } = require('../utils/cache');
+const { invalidateEvents } = require('../utils/cacheInvalidation');
+
+const EVENTS_VER_KEY = 'ver:events';
 
 const getEvents = async (req, res) => {
-    const events = await Event.find()
-        .populate('organizerId', 'name lastName email imageUrl')
-        .sort({ date: 1 });
-    res.json(events);
+    const { page, limit, skip } = parsePaginationParams(req);
+    const version = await getVersion(EVENTS_VER_KEY);
+    const cacheKey = buildKey('events', version, `p${page}:l${limit}`);
+
+    const result = await getOrSet(cacheKey, 300, async () => {
+        const [events, total] = await Promise.all([
+            Event.find()
+                .populate('organizerId', 'name lastName email imageUrl')
+                .sort({ date: 1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Event.countDocuments()
+        ]);
+        return buildPaginatedResponse(events, page, limit, total);
+    });
+
+    res.json(result);
 };
 
 const createEvent = async (req, res) => {
@@ -30,6 +49,7 @@ const createEvent = async (req, res) => {
         imageUrl
     });
 
+    await invalidateEvents();
     res.status(201).json(event);
 };
 
@@ -44,6 +64,7 @@ const deleteEvent = async (req, res) => {
     }
 
     await Event.findByIdAndDelete(req.params.id);
+    await invalidateEvents();
     res.json({ success: true, message: 'Event deleted successfully' });
 };
 

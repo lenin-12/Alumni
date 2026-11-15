@@ -11,6 +11,8 @@ const Chat = () => {
 
     const [socket, setSocket] = useState(null);
     const [messages, setMessages] = useState([]);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
     const [input, setInput] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
@@ -93,7 +95,9 @@ const Chat = () => {
         axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/chat/history/${userId}/${receiverId}`)
             .then(response => {
                 if (!cancelled) {
-                    setMessages(response.data);
+                    setMessages(prev => nextCursor ? [...response.data.data, ...prev] : response.data.data);
+        setHasMore(!!response.data.nextCursor);
+        setNextCursor(response.data.nextCursor);
                     scrollToBottom();
                 }
             })

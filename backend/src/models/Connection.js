@@ -6,4 +6,8 @@ const connectionSchema = new mongoose.Schema({
     status: { type: String, enum: ['PENDING', 'ACCEPTED', 'REJECTED'], default: 'PENDING' },
 }, { timestamps: true });
 
+connectionSchema.index({ requesterId: 1, recipientId: 1 }, { unique: true });
+connectionSchema.index({ requesterId: 1, status: 1 });
+connectionSchema.index({ recipientId: 1, status: 1 });
+
 module.exports = mongoose.model('Connection', connectionSchema);

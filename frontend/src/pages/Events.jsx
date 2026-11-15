@@ -14,6 +14,8 @@ import { toast } from "react-toastify";
 function Events() {
   const { user } = useUser();
   const [events, setEvents] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,7 +56,7 @@ function Events() {
     // Fetch all events
     const fetchEvents = async () => {
       try {
-        const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/events`, { withCredentials: true });
+        const response = await axiosInstance.get(`${import.meta.env.VITE_API_URL}/api/events?page=${page}`, { withCredentials: true });
         const eventsArray = Array.isArray(response.data) ? response.data.reverse() : [response.data];
         setEvents(eventsArray);
         setFilteredEvents(eventsArray);

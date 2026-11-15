@@ -1,5 +1,6 @@
 const ContactMessage = require('../models/ContactMessage');
 const AppError = require('../utils/AppError');
+const { parsePaginationParams, buildPaginatedResponse } = require('../utils/pagination');
 
 const submitMessage = async (req, res) => {
     const { name, email, subject, message } = req.body;
@@ -15,8 +16,12 @@ const submitMessage = async (req, res) => {
 };
 
 const getMessages = async (req, res) => {
-    const messages = await ContactMessage.find().sort({ createdAt: -1 });
-    res.json(messages);
+    const { page, limit, skip } = parsePaginationParams(req);
+    const [messages, total] = await Promise.all([
+        ContactMessage.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        ContactMessage.countDocuments()
+    ]);
+    res.json(buildPaginatedResponse(messages, page, limit, total));
 };
 
 const resolveMessage = async (req, res) => {

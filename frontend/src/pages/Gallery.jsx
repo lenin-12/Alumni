@@ -13,6 +13,8 @@ const Gallery = () => {
     const [folders, setFolders] = useState([]);
     const [currentFolder, setCurrentFolder] = useState(null);
     const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
     const [uploadMode, setUploadMode] = useState(false);
     const [folderName, setFolderName] = useState("");
     const [selectedFile, setSelectedFile] = useState(null);
