@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { getOrSet, entityKey } = require('../utils/cache');
 
-/
+
 const withId = (user) => ({ ...user, id: String(user._id) });
 
 const protect = async (req, res, next) => {
