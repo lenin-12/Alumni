@@ -168,8 +168,8 @@ CI runs both suites on every pull request and every push to `main`.
 
 ## Deployment
 
-- **Frontend:** Vercel or Netlify. Build command `npm run build`, output directory `dist`, and set `VITE_API_URL` to your backend URL.
-- **Backend:** Render, Railway, or similar. Start command `npm start`, with all backend environment variables configured.
+- **Frontend:** Vercel. Build command `npm run build`, output directory `dist`, and set `VITE_API_URL` to your backend URL.
+- **Backend:** Render. Start command `npm start`, with all backend environment variables configured.
 - **Production note:** Mongoose `autoIndex` is disabled in production. After deploying, run `NODE_ENV=production node scripts/syncIndexes.js` once to build indexes.
 
 ---
