@@ -5,7 +5,8 @@ A full-stack (MERN) platform that connects alumni and students for networking, m
 [![CI](https://github.com/lenin-12/Alumni/actions/workflows/ci.yml/badge.svg)](https://github.com/lenin-12/Alumni/actions/workflows/ci.yml)
 
 **Live demo:** (https://alumni-weld-eight.vercel.app/)
-**Screenshots:** ![Uploading Screenshot 2026-11-17 at 10.09.58 AM.png…]()
+**Screenshots:** <img width="1707" height="953" alt="Screenshot 2026-11-17 at 10 14 06 AM" src="https://github.com/user-attachments/assets/3e1d0b76-ce02-4abe-91ca-070da09a9254" />
+
 ---
 
 ## Features
