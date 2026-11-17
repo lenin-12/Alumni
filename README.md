@@ -176,4 +176,4 @@ CI runs both suites on every pull request and every push to `main`.
 
 ## Author
 
-**Lenin** — [GitHub](https://github.com/lenin-12)![Uploading Screenshot 2026-11-17 at 10.09.32 AM.png…]()
+**Lenin** — [GitHub](https://github.com/lenin-12)
