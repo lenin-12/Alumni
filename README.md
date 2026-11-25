@@ -165,6 +165,62 @@ npm run test:db     # integration tests (needs MongoDB running)
 CI runs both suites on every pull request and every push to `main`.
 
 ---
+## Query Performance (MongoDB indexes)
+
+I measured the main queries with `explain('executionStats')` before and after adding indexes.
+
+**How the test works** (`backend/scripts/benchmarkQueries.js`)
+1. Drops all indexes (except `_id`) on a separate benchmark database.
+2. Runs each query 5 times and keeps the last run, so cold-start time is ignored.
+3. Creates the indexes.
+4. Runs the same queries again and compares the results.
+
+**Test data:** 1,000 users, 2,000 chat messages, 1,000 group messages, 1,000 connections, 1,000 achievements, 10,000 job posts, 10,000 work experience records.
+
+### Results
+
+| Query | Time (before → after) | Docs examined (before → after) | Plan change |
+|---|---|---|---|
+| ChatMessage history | 1ms → 0ms | 2,000 → 0 | SORT + COLLSCAN → IXSCAN |
+| ChatMessage recent contacts | 2ms → 0ms | 2,000 → 4 | COLLSCAN → IXSCAN (OR) |
+| GroupMessage | 1ms → 3ms | 1,000 → 1,000 | SORT + COLLSCAN → IXSCAN |
+| Connection requester | 0ms → 0ms | 1,000 → 0 | COLLSCAN → IXSCAN |
+| Connection recipient | 0ms → 0ms | 1,000 → 0 | COLLSCAN → IXSCAN |
+| Connection unique check | 0ms → 0ms | 1,000 → 0 | COLLSCAN → IXSCAN |
+| Achievement by user | 0ms → 0ms | 1,000 → 2 | SORT + COLLSCAN → IXSCAN |
+| Achievement feed | 1ms → 2ms | 1,000 → 1,000 | SORT + COLLSCAN → IXSCAN |
+| WorkExperience by user | 5ms → 0ms | 10,000 → 9 | COLLSCAN → IXSCAN |
+| User by role, batch | 1ms → 1ms | 1,000 → 513 | COLLSCAN → IXSCAN |
+| User by role, company | 0ms → 0ms | 1,000 → 0 | COLLSCAN → IXSCAN |
+| JobOpportunity feed | 7ms → 8ms | 10,000 → 10,000 | SORT + COLLSCAN → IXSCAN |
+| ChatGroup members | 0ms → 0ms | 1 → 1 | COLLSCAN → IXSCAN |
+| UserPoints leaderboard | 0ms → 0ms | 1,000 → 1,000 | SORT + COLLSCAN → IXSCAN |
+
+### What the results show
+
+- **Every query changed from a full collection scan (COLLSCAN) to an index scan (IXSCAN).**
+- **The biggest gain is in documents examined.** Work experience by user went from 10,000 to 9. Achievements by user went from 1,000 to 2. Connection lookups went from 1,000 to 0. Recent chat contacts went from 2,000 to 4.
+- **Time in milliseconds is not a reliable measure here.** The data is small, so most queries take 0 to 8 ms before and after. Documents examined and the query plan show how the query will behave when the data grows.
+- **Some queries return every row** (group messages, achievement feed, job feed, leaderboard). They still read all documents after indexing. The index only removes the in-memory sort step.
+
+### Run it yourself
+
+```bash
+cd backend
+# .env needs MONGO_URI_BENCH, and the database name must contain "bench"
+node scripts/seedLoadData.js        # only if the benchmark database is empty
+node scripts/benchmarkQueries.js
+```
+
+The script refuses to run on any database whose name does not contain `bench`, because it drops indexes.
+
+### Production rollout
+
+```bash
+NODE_ENV=production node scripts/syncIndexes.js
+```
+
+Mongoose `autoIndex` is disabled in production to prevent unexpected database locks.
 
 ## Deployment
 
